@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, onErrorCaptured, onMounted, onUnmounted, ref, useAttrs, watch, type Component } from 'vue'
+import { computed, defineAsyncComponent, onErrorCaptured, onMounted, onUnmounted, ref, useAttrs, type Component } from 'vue'
 import { detectWebGL } from '@/lib/experience'
 import { usePrefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 
@@ -23,9 +23,8 @@ const root = ref<HTMLElement | null>(null)
 const webgl = ref<boolean | null>(null)
 const failed = ref(false)
 const live = ref(false)
-const visible = ref(true)
-const interacting = ref(false)
-const settle = ref(true)
+const containerReady = ref(false)
+const tabVisible = ref(true)
 const parallax = ref({ x: 0, y: 0 })
 
 const loaders: Record<'lobby' | 'hall' | 'observatory', () => Promise<Component>> = {
@@ -47,8 +46,15 @@ onErrorCaptured(() => {
     return false
 })
 
-const motion = computed(() => !reduced.value && visible.value && (interacting.value || settle.value || props.animating === true))
-const showCanvas = computed(() => webgl.value === true && !failed.value && visible.value)
+// The canvas mounts once, as soon as webgl is available, it hasn't failed, and the
+// stage has a real measured size. It then stays mounted for the life of this screen:
+// pausing happens through `motion`/the render loop, not by tearing the canvas down,
+// so the TresCanvas `ready` event only ever needs to fire once.
+const showCanvas = computed(() => webgl.value === true && !failed.value && containerReady.value)
+// Rooms carry a continuous slow idle drift and light shimmer, so motion stays
+// on whenever it's allowed at all (tab visible, reduced-motion not requested)
+// rather than only during the first settle or while the pointer moves.
+const motion = computed(() => !reduced.value && tabVisible.value)
 
 const note = computed(() => {
     if (failed.value) {
@@ -62,47 +68,39 @@ const note = computed(() => {
     return 'Preparing the room'
 })
 
-let observer: IntersectionObserver | null = null
-let settleTimer = 0
-let intersecting = true
+let resizeObserver: ResizeObserver | null = null
 
-function syncVisible() {
-    visible.value = intersecting && document.visibilityState !== 'hidden'
+function syncTabVisible() {
+    tabVisible.value = document.visibilityState !== 'hidden'
 }
 
-function onVisibility() {
-    syncVisible()
+function measureContainer() {
+    if (containerReady.value || !root.value) {
+        return
+    }
+
+    if (root.value.clientWidth > 0 && root.value.clientHeight > 0) {
+        containerReady.value = true
+        resizeObserver?.disconnect()
+        resizeObserver = null
+    }
 }
 
 onMounted(() => {
     webgl.value = detectWebGL()
-    settleTimer = window.setTimeout(() => {
-        settle.value = false
-    }, 1100)
-    document.addEventListener('visibilitychange', onVisibility)
+    document.addEventListener('visibilitychange', syncTabVisible)
+    syncTabVisible()
+    measureContainer()
 
-    if (root.value && 'IntersectionObserver' in window) {
-        observer = new IntersectionObserver(
-            ([entry]) => {
-                intersecting = entry?.isIntersecting ?? true
-                syncVisible()
-            },
-            { threshold: 0.08 },
-        )
-        observer.observe(root.value)
+    if (!containerReady.value && root.value && 'ResizeObserver' in window) {
+        resizeObserver = new ResizeObserver(() => measureContainer())
+        resizeObserver.observe(root.value)
     }
 })
 
 onUnmounted(() => {
-    window.clearTimeout(settleTimer)
-    observer?.disconnect()
-    document.removeEventListener('visibilitychange', onVisibility)
-})
-
-watch(showCanvas, (value) => {
-    if (value) {
-        live.value = false
-    }
+    resizeObserver?.disconnect()
+    document.removeEventListener('visibilitychange', syncTabVisible)
 })
 
 function onMove(event: PointerEvent) {
@@ -120,12 +118,10 @@ function onMove(event: PointerEvent) {
         x: ((event.clientX - rect.left) / rect.width) * 2 - 1,
         y: ((event.clientY - rect.top) / rect.height) * 2 - 1,
     }
-    interacting.value = true
 }
 
 function onLeave() {
     parallax.value = { x: 0, y: 0 }
-    interacting.value = false
 }
 </script>
 

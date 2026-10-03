@@ -40,7 +40,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKey))
         <div class="flex items-start justify-between gap-3">
             <div>
                 <p class="eyebrow">{{ categoryName }}</p>
-                <h2 id="skill-detail-title" class="mt-2 mb-0 font-display text-4xl font-normal" tabindex="-1">{{ skill.title }}</h2>
+                <h2 id="skill-detail-title" class="mt-2 mb-0 font-heading text-4xl font-normal" tabindex="-1">{{ skill.title }}</h2>
             </div>
             <button type="button" class="btn btn-ghost" @click="emit('close')">Close</button>
         </div>

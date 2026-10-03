@@ -25,7 +25,7 @@ const hovered = ref<string | null>(null)
 const frames = computed(() => layoutFrames(props.projects.length))
 const depth = computed(() => 8 + Math.ceil(Math.max(props.projects.length, 1) / 2) * 2.4)
 const floor = markRaw(createFloor(6.4, depth.value))
-floor.mesh.position.set(0, 0, 0.4 - depth.value / 2)
+floor.group.position.set(0, 0, 0.4 - depth.value / 2)
 const ceilingLights = [-2.1, -4.3, -6.5, -8.7]
 const variety = [1, 0.92, 1.08, 0.96, 1.05, 0.9]
 const screens = props.projects.map((_, index) => markRaw(createScreen(frameAccents[index % frameAccents.length] ?? '#8eecff')))
@@ -76,8 +76,7 @@ useCameraRig(
 )
 
 onUnmounted(() => {
-    floor.material.dispose()
-    floor.mesh.geometry.dispose()
+    floor.dispose()
     screenMeshes.forEach((mesh) => {
         mesh.geometry.dispose()
         ;(mesh.material as { dispose: () => void }).dispose()
@@ -116,7 +115,7 @@ function glow(slug: string): number {
     <TresAmbientLight :intensity="0.18" color="#9eb0d4" />
     <TresDirectionalLight :position="[1.5, 5.5, 4]" :intensity="0.72" color="#e4ecff" />
     <TresPointLight :position="[0, 2.7, -1.2]" :intensity="3.2" color="#8eecff" :distance="16" :decay="2" />
-    <primitive :object="floor.mesh" />
+    <primitive :object="floor.group" />
 
     <TresMesh :position="[-3.2, 1.7, 0.4 - depth / 2]">
         <TresBoxGeometry :args="[0.14, 3.4, depth]" />

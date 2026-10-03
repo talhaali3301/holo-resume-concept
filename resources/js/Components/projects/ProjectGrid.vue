@@ -26,7 +26,7 @@ const emit = defineEmits<{
                 <template v-if="statusLabel(project.status)"> · {{ statusLabel(project.status) }}</template>
                 <template v-if="project.slug === selectedSlug"> · Viewing</template>
             </p>
-            <h2 class="mt-3 mb-2 font-display text-3xl font-normal">{{ project.title }}</h2>
+            <h2 class="mt-3 mb-2 font-heading text-3xl font-normal">{{ project.title }}</h2>
             <p class="m-0 flex-1 leading-relaxed text-muted">{{ project.summary }}</p>
             <p v-if="project.technologies.length" class="mt-4 mb-0 text-sm text-muted">{{ project.technologies.join(' · ') }}</p>
             <button

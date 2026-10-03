@@ -1,7 +1,27 @@
 <script setup lang="ts">
-import { markRaw, onUnmounted, ref } from 'vue'
-import { BufferGeometry, Float32BufferAttribute, Mesh, MeshBasicMaterial, Points, PointsMaterial, TorusGeometry, Vector3 } from 'three'
+import { computed, markRaw, onUnmounted, ref } from 'vue'
+import {
+    AdditiveBlending,
+    BoxGeometry,
+    BufferGeometry,
+    EdgesGeometry,
+    Float32BufferAttribute,
+    Group,
+    IcosahedronGeometry,
+    LineBasicMaterial,
+    LineSegments,
+    Mesh,
+    MeshBasicMaterial,
+    MeshStandardMaterial,
+    PlaneGeometry,
+    Points,
+    PointsMaterial,
+    PointLight,
+    SphereGeometry,
+    Vector3,
+} from 'three'
 import { createFloor } from '@/scenes/floor'
+import { createGatewayGlow } from '@/scenes/gateway'
 import { useCameraRig } from '@/scenes/useCameraRig'
 import type { Destination } from '@/types/portfolio'
 
@@ -19,58 +39,197 @@ const emit = defineEmits<{
 
 const hovered = ref<string | null>(null)
 const narrow = typeof window !== 'undefined' && window.matchMedia('(max-width: 800px)').matches
-const floor = markRaw(createFloor(16, 14))
-floor.mesh.position.set(0, 0, -0.4)
 
-const ringMaterial = new MeshBasicMaterial({ color: '#8eecff', transparent: true, opacity: 0.75 })
-const ring = markRaw(new Mesh(new TorusGeometry(0.46, 0.01, 12, 72), ringMaterial))
-ring.rotation.x = Math.PI / 2.15
-ring.position.set(1.45, 0.55, 3.15)
-const ringB = markRaw(new Mesh(new TorusGeometry(0.28, 0.008, 10, 48), ringMaterial.clone()))
-ringB.rotation.x = Math.PI / 3
-ringB.position.set(1.45, 0.55, 3.15)
+function setHover(id: string | null) {
+    hovered.value = id
+    emit('hover', id)
+}
 
-const dust = (() => {
-    if (typeof window !== 'undefined' && window.matchMedia('(max-width: 800px)').matches) {
-        return null
+// Narrow viewports get genuinely smaller geometry (not just a pulled-back
+// camera): that keeps the gateways contained in a middle band, clear of the
+// fixed intro/destination text zones above and below.
+const scale = narrow ? 0.6 : 1
+const GATEWAY_WIDTH = 1.55 * scale
+const GATEWAY_HEIGHT = 5.1 * scale
+
+interface GatewayConfig {
+    id: string
+    position: [number, number]
+    width: number
+    height: number
+    color: string
+}
+
+const spread = narrow ? 2.1 : 3.75
+const depth = narrow ? -3.2 : -4.3
+const depthCenter = narrow ? -3.6 : -4.85
+
+const layout: GatewayConfig[] = [
+    { id: 'projects', position: [-spread, depth], width: GATEWAY_WIDTH, height: GATEWAY_HEIGHT, color: '#5ee6ff' },
+    { id: 'skills', position: [0, depthCenter], width: GATEWAY_WIDTH, height: GATEWAY_HEIGHT, color: '#5ee6ff' },
+    { id: 'contact', position: [spread, depth], width: GATEWAY_WIDTH * 0.86, height: GATEWAY_HEIGHT * 0.88, color: '#8d7bff' },
+]
+
+const gateways = computed(() => layout.filter((gateway) => props.destinations.some((d) => d.id === gateway.id)))
+
+const floor = markRaw(createFloor(40, 50))
+floor.group.position.set(0, 0, -5)
+
+function buildGateway(config: GatewayConfig): Group {
+    const group = new Group()
+    group.position.set(config.position[0], 0, config.position[1])
+
+    const thickness = config.width * 0.028
+    const frameMaterial = new MeshStandardMaterial({
+        color: '#0a0e18',
+        emissive: config.color,
+        emissiveIntensity: 1.4,
+        roughness: 0.35,
+        metalness: 0.55,
+    })
+
+    const left = new Mesh(new BoxGeometry(thickness, config.height, thickness), frameMaterial)
+    left.position.set(-config.width / 2, config.height / 2, 0)
+    const right = new Mesh(new BoxGeometry(thickness, config.height, thickness), frameMaterial)
+    right.position.set(config.width / 2, config.height / 2, 0)
+    const top = new Mesh(new BoxGeometry(config.width + thickness, thickness, thickness), frameMaterial)
+    top.position.set(0, config.height, 0)
+    group.add(left, right, top)
+
+    const glow = createGatewayGlow(config.width * 0.92, config.height * 0.96, config.color, 0.16)
+    glow.position.set(0, 0, -0.04)
+    group.add(glow)
+
+    group.add(buildGlimpse(config))
+
+    const hit = new Mesh(
+        new PlaneGeometry(config.width + 0.4, config.height + 0.3),
+        new MeshBasicMaterial({ color: '#000000', transparent: true, opacity: 0 }),
+    )
+    hit.position.set(0, config.height / 2, 0.1)
+    hit.userData.gatewayId = config.id
+    group.add(hit)
+
+    return group
+}
+
+function buildGlimpse(config: GatewayConfig): Group {
+    const group = new Group()
+    const depth = -0.9
+
+    if (config.id === 'projects') {
+        const positions: Array<[number, number, number, number, number]> = [
+            [-0.32, config.height * 0.62, depth, 0.3, 0.19],
+            [0.26, config.height * 0.48, depth - 0.3, 0.26, 0.17],
+            [-0.1, config.height * 0.78, depth - 0.55, 0.22, 0.14],
+        ]
+
+        for (const [x, y, z, w, h] of positions) {
+            const material = new MeshBasicMaterial({ color: config.color, transparent: true, opacity: 0.85 })
+            const screen = new Mesh(new PlaneGeometry(w, h), material)
+            screen.position.set(x, y, z)
+            group.add(screen)
+        }
     }
 
-    const positions = new Float32Array(24 * 3)
+    if (config.id === 'skills') {
+        const count = 14
+        const positions = new Float32Array(count * 3)
 
-    for (let index = 0; index < 24; index += 1) {
-        positions[index * 3] = (Math.random() - 0.5) * 8
-        positions[index * 3 + 1] = 0.4 + Math.random() * 2.4
-        positions[index * 3 + 2] = -3 + Math.random() * 5
+        for (let i = 0; i < count; i += 1) {
+            positions[i * 3] = (Math.random() - 0.5) * 0.9
+            positions[i * 3 + 1] = config.height * 0.35 + Math.random() * config.height * 0.5
+            positions[i * 3 + 2] = depth - Math.random() * 0.8
+        }
+
+        const geometry = new BufferGeometry()
+        geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
+        const points = new Points(geometry, new PointsMaterial({ color: config.color, size: 0.03, transparent: true, opacity: 0.9 }))
+        group.add(points)
     }
 
-    const geometry = new BufferGeometry()
-    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
-    const points = new Points(geometry, new PointsMaterial({ color: '#9ad8ee', size: 0.018, transparent: true, opacity: 0.45 }))
+    if (config.id === 'contact') {
+        const beacon = new Mesh(
+            new SphereGeometry(0.11, 20, 20),
+            new MeshBasicMaterial({ color: '#f4f8ff' }),
+        )
+        beacon.position.set(0, config.height * 0.52, depth + 0.2)
+        group.add(beacon)
+    }
 
-    return markRaw(points)
-})()
+    return group
+}
 
-const portals = [
-    { id: 'projects', position: [-0.2, 0, 0.2] as [number, number, number], color: '#8eecff', width: 1.35 },
-    { id: 'skills', position: [1.7, 0, -1.45] as [number, number, number], color: '#6aa6ff', width: 1.15 },
-    { id: 'contact', position: [3.45, 0, 0.2] as [number, number, number], color: '#d7e4ff', width: 1.05 },
-].filter((portal) => props.destinations.some((destination) => destination.id === portal.id))
+const gatewayGroups = computed(() => gateways.value.map((config) => markRaw(buildGateway(config))))
+
+const gatewayLights = gateways.value.map((config) => {
+    const light = new PointLight(config.color, 2.6, 6, 2)
+    light.position.set(config.position[0], 1.1, config.position[1] + 0.6)
+
+    return markRaw(light)
+})
+
+const emblemGroup = markRaw(new Group())
+emblemGroup.position.set(0, narrow ? 2.1 : 1.62, narrow ? -2.1 : -1.6)
+const emblemGeometry = new IcosahedronGeometry(0.52 * scale, 1)
+const emblemEdges = new LineSegments(
+    new EdgesGeometry(emblemGeometry),
+    new LineBasicMaterial({ color: '#d7f4ff', transparent: true, opacity: 0.8 }),
+)
+const emblemFill = new Mesh(
+    emblemGeometry,
+    new MeshBasicMaterial({ color: '#5ee6ff', transparent: true, opacity: 0.06, blending: AdditiveBlending, depthWrite: false }),
+)
+emblemGroup.add(emblemFill, emblemEdges)
+
+const emblemLight = markRaw(new PointLight('#8eecff', 3.2, 5, 2))
+emblemLight.position.set(0, 0.4, -1.6)
+
+onUnmounted(() => {
+    floor.dispose()
+    emblemGeometry.dispose()
+    emblemEdges.geometry.dispose()
+    ;(emblemEdges.material as LineBasicMaterial).dispose()
+    ;(emblemFill.material as MeshBasicMaterial).dispose()
+    gatewayGroups.value.forEach((group) => {
+        group.traverse((child) => {
+            if (child instanceof Mesh || child instanceof Points) {
+                child.geometry.dispose()
+                const material = child.material
+                if (Array.isArray(material)) {
+                    material.forEach((m) => m.dispose())
+                } else {
+                    material.dispose()
+                }
+            }
+        })
+    })
+})
 
 const position = new Vector3()
 const look = new Vector3()
+const DRIFT_CYCLE = 17
 
 useCameraRig(
-    (target) => {
-        const shiftX = props.motion ? props.parallaxX * 0.42 : 0
-        const shiftY = props.motion ? props.parallaxY * -0.12 : 0
+    (target, elapsed) => {
+        const driftAmp = props.motion ? 0.14 : 0
+        const driftX = Math.sin((elapsed / DRIFT_CYCLE) * Math.PI * 2) * driftAmp
+        const driftY = Math.sin((elapsed / (DRIFT_CYCLE * 1.4)) * Math.PI * 2) * driftAmp * 0.35
+
+        const shiftX = props.motion ? props.parallaxX * 0.22 : 0
+        const shiftY = props.motion ? props.parallaxY * -0.08 : 0
+
+        const lean = gateways.value.find((g) => g.id === hovered.value)
+        const leanX = lean ? lean.position[0] * 0.1 : 0
 
         if (narrow) {
-            position.set(1.55, 2.05, 8.2)
-            look.set(1.55, 1.15, -0.4)
+            position.set(driftX, 1.9 + driftY, 18)
+            look.set(leanX, 1.6, -2.6)
         } else {
-            position.set(shiftX + 0.2, 1.52 + shiftY, 5.1)
-            look.set(1.55 + shiftX * 0.12, 1.18, -0.8)
+            position.set(driftX + shiftX, 1.64 + driftY + shiftY, 6.5)
+            look.set(leanX + shiftX * 0.25, 1.5, -2.6)
         }
+
         target.position.copy(position)
         target.look.copy(look)
     },
@@ -78,127 +237,35 @@ useCameraRig(
     (elapsed, moving) => {
         floor.material.uniforms.uTime.value = elapsed
         floor.material.uniforms.uMotion.value = moving ? 1 : 0
+        emblemGroup.rotation.y = elapsed * 0.14
+        emblemGroup.rotation.x = Math.sin(elapsed * 0.11) * 0.08
 
-        if (moving) {
-            ring.rotation.z = elapsed * 0.22
-            ringB.rotation.y = elapsed * 0.18
-
-            if (dust) {
-                dust.rotation.y = elapsed * 0.02
-            }
-        }
+        gatewayLights.forEach((light, index) => {
+            const base = 2.6
+            light.intensity = moving ? base * (0.88 + 0.12 * Math.sin(elapsed * 1.1 + index * 1.7)) : base
+        })
+        emblemLight.intensity = moving ? 3.2 * (0.85 + 0.15 * Math.sin(elapsed * 1.4)) : 3.2
     },
 )
-
-onUnmounted(() => {
-    floor.material.dispose()
-    floor.mesh.geometry.dispose()
-    ring.geometry.dispose()
-    ringMaterial.dispose()
-    ringB.geometry.dispose()
-    ;(ringB.material as MeshBasicMaterial).dispose()
-    dust?.geometry.dispose()
-    ;(dust?.material as PointsMaterial | undefined)?.dispose()
-})
-
-function intensity(id: string): number {
-    return hovered.value === id ? 1.15 : 0.28
-}
-
-function setHover(id: string | null) {
-    hovered.value = id
-    emit('hover', id)
-}
 </script>
 
 <template>
-    <TresPerspectiveCamera :position="narrow ? [1.55, 2.05, 8.2] : [0.2, 1.52, 5.1]" :fov="narrow ? 52 : 40" :near="0.1" :far="40" />
-    <TresAmbientLight :intensity="0.45" color="#c5d4ef" />
-    <TresDirectionalLight :position="[2.4, 5.5, 4]" :intensity="1.6" color="#f2f6ff" />
-    <TresPointLight :position="[0, 2.4, 1.2]" :intensity="12" color="#8eecff" :distance="18" :decay="2" />
-    <primitive :object="floor.mesh" />
-    <primitive :object="ring" />
-    <primitive :object="ringB" />
-    <primitive v-if="dust" :object="dust" />
+    <TresPerspectiveCamera :position="narrow ? [0, 1.9, 18] : [0, 1.64, 6.5]" :fov="narrow ? 42 : 38" :near="0.1" :far="40" />
 
-    <TresMesh :position="[0, 1.75, -4.6]">
-        <TresBoxGeometry :args="[14, 3.6, 0.16]" />
-        <TresMeshStandardMaterial color="#10182a" :roughness="0.9" />
-    </TresMesh>
-    <TresMesh :position="[-6.6, 1.75, -0.6]">
-        <TresBoxGeometry :args="[0.16, 3.6, 9]" />
-        <TresMeshStandardMaterial color="#0d1424" :roughness="0.92" />
-    </TresMesh>
-    <TresMesh :position="[6.6, 1.75, -0.6]">
-        <TresBoxGeometry :args="[0.16, 3.6, 9]" />
-        <TresMeshStandardMaterial color="#0d1424" :roughness="0.92" />
-    </TresMesh>
-    <TresMesh :position="[0, 3.5, -0.6]">
-        <TresBoxGeometry :args="[13.2, 0.08, 9]" />
-        <TresMeshStandardMaterial color="#0c1220" />
-    </TresMesh>
-    <TresMesh :position="[0, 3.34, -1.4]">
-        <TresBoxGeometry :args="[4.2, 0.02, 0.06]" />
-        <TresMeshStandardMaterial color="#8eecff" emissive="#8eecff" :emissive-intensity="0.7" />
-    </TresMesh>
-    <TresMesh :position="[1.45, 0.012, 2.55]" :rotation-x="-Math.PI / 2">
-        <TresRingGeometry :args="[0.42, 0.48, 40]" />
-        <TresMeshBasicMaterial color="#8eecff" :transparent="true" :opacity="0.7" />
-    </TresMesh>
-    <TresMesh :position="[1.45, 0.42, 2.35]">
-        <TresBoxGeometry :args="[0.012, 0.7, 0.012]" />
-        <TresMeshBasicMaterial color="#8eecff" :transparent="true" :opacity="0.85" />
-    </TresMesh>
-    <TresMesh :position="[1.55, 0.02, -0.4]" :rotation-x="-Math.PI / 2">
-        <TresPlaneGeometry :args="[0.04, 4.2]" />
-        <TresMeshBasicMaterial color="#8eecff" :transparent="true" :opacity="0.35" />
-    </TresMesh>
-    <TresMesh :position="[0, 0.04, -4.45]">
-        <TresBoxGeometry :args="[12, 0.03, 0.04]" />
-        <TresMeshBasicMaterial color="#8eecff" :transparent="true" :opacity="0.45" />
-    </TresMesh>
+    <TresAmbientLight :intensity="0.08" color="#8aa0c8" />
+    <TresDirectionalLight :position="[0, 7, -9]" :intensity="0.3" color="#eef4ff" />
+    <primitive v-for="light in gatewayLights" :key="light.uuid" :object="light" />
+    <primitive :object="emblemLight" />
 
-    <TresGroup v-for="portal in portals" :key="portal.id" :position="portal.position">
-        <TresMesh :position="[0, 2.55, -0.2]">
-            <TresBoxGeometry :args="[0.08, 1.7, 0.08]" />
-            <TresMeshBasicMaterial :color="portal.color" :transparent="true" :opacity="hovered === portal.id ? 0.28 : 0.08" />
-        </TresMesh>
-        <TresMesh :position="[-(portal.width / 2), 1.15, 0]">
-            <TresBoxGeometry :args="[0.055, 2.3, 0.08]" />
-            <TresMeshStandardMaterial :color="portal.color" :emissive="portal.color" :emissive-intensity="intensity(portal.id)" :roughness="0.3" :metalness="0.4" />
-        </TresMesh>
-        <TresMesh :position="[portal.width / 2, 1.15, 0]">
-            <TresBoxGeometry :args="[0.055, 2.3, 0.08]" />
-            <TresMeshStandardMaterial :color="portal.color" :emissive="portal.color" :emissive-intensity="intensity(portal.id)" :roughness="0.3" :metalness="0.4" />
-        </TresMesh>
-        <TresMesh :position="[0, 2.28, 0]">
-            <TresBoxGeometry :args="[portal.width + 0.08, 0.055, 0.08]" />
-            <TresMeshStandardMaterial :color="portal.color" :emissive="portal.color" :emissive-intensity="intensity(portal.id)" :roughness="0.3" :metalness="0.4" />
-        </TresMesh>
-        <TresMesh v-if="portal.id === 'skills'" :position="[0, 2.55, 0]" :rotation-x="Math.PI / 2">
-            <TresTorusGeometry :args="[0.34, 0.012, 8, 32]" />
-            <TresMeshBasicMaterial :color="portal.color" />
-        </TresMesh>
-        <TresMesh v-if="portal.id === 'contact'" :position="[0, 2.62, 0]" :rotation-z="Math.PI / 4">
-            <TresBoxGeometry :args="[0.22, 0.22, 0.04]" />
-            <TresMeshStandardMaterial :color="portal.color" emissive="#d7e4ff" :emissive-intensity="intensity(portal.id)" />
-        </TresMesh>
-        <TresMesh :position="[0, 1.15, -0.02]">
-            <TresPlaneGeometry :args="[portal.width - 0.12, 2.1]" />
-            <TresMeshStandardMaterial color="#0c121c" :emissive="portal.color" :emissive-intensity="hovered === portal.id ? 0.35 : 0.06" />
-        </TresMesh>
-        <TresMesh :position="[0, 0.015, 0.7]" :rotation-x="-Math.PI / 2">
-            <TresPlaneGeometry :args="[portal.width * 0.72, 1.35]" />
-            <TresMeshBasicMaterial :color="portal.color" :transparent="true" :opacity="hovered === portal.id ? 0.34 : 0.07" :depth-write="false" />
-        </TresMesh>
-        <TresMesh
-            :position="[0, 1.15, 0.08]"
-            @pointerenter="setHover(portal.id)"
-            @pointerleave="setHover(null)"
-            @click="emit('select', portal.id)"
-        >
-            <TresPlaneGeometry :args="[portal.width + 0.3, 2.4]" />
-            <TresMeshBasicMaterial color="#000000" :transparent="true" :opacity="0" :depth-write="false" />
-        </TresMesh>
-    </TresGroup>
+    <primitive :object="floor.group" />
+    <primitive :object="emblemGroup" />
+
+    <primitive
+        v-for="(group, index) in gatewayGroups"
+        :key="gateways[index]?.id"
+        :object="group"
+        @pointerenter="setHover(gateways[index]?.id ?? null)"
+        @pointerleave="setHover(null)"
+        @click="gateways[index] && emit('select', gateways[index]!.id)"
+    />
 </template>

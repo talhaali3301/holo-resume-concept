@@ -29,17 +29,17 @@ return [
         'product' => 'Holo Resume',
         'name' => null,
         'role' => 'Web application developer',
-        'headline' => 'Software, arranged as architecture.',
-        'lede' => 'A portfolio for a web application developer, explored as three rooms: a lobby, a projects hall, and a skills observatory. The same record is available as a standard view if you would rather read.',
-        'body' => 'This profile is sample content. It shows how the space behaves. It does not describe a real client history, employer, or measured outcome. Replace it in content/portfolio.php.',
-        'availability' => 'Sample note. Add your real availability, location, or current focus here.',
+        'headline' => 'A developer portfolio you can walk through.',
+        'lede' => 'Web applications built with Laravel, Vue, and real-time 3D.',
+        'body' => 'This profile is concept content. It shows how the space behaves. It does not describe a real client history, employer, or measured outcome. Replace it in content/portfolio.php.',
+        'availability' => 'Concept note. Add your real availability, location, or current focus here.',
     ],
 
     'contact' => [
         'sample' => true,
         'email' => null,
         'headline' => 'Work with me',
-        'body' => 'Contact details have not been added yet. Add an email address or profile URL in content/portfolio.php and this panel will show only those links.',
+        'body' => '',
         'links' => [
             // ['label' => 'GitHub', 'url' => 'https://github.com/your-account'],
             // ['label' => 'LinkedIn', 'url' => 'https://www.linkedin.com/in/your-profile'],

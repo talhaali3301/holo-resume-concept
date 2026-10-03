@@ -82,7 +82,7 @@ onUnmounted(() => {
                 <template v-if="project.sample && statusLabel(project.status)"> · </template>
                 <template v-if="statusLabel(project.status)">{{ statusLabel(project.status) }}</template>
             </p>
-            <h2 id="project-detail-title" class="mt-4 mb-3 font-display text-4xl font-normal tracking-tight">{{ project.title }}</h2>
+            <h2 id="project-detail-title" class="mt-4 mb-3 font-heading text-4xl font-normal tracking-tight">{{ project.title }}</h2>
             <p v-if="project.summary" class="text-lg text-muted leading-relaxed">{{ project.summary }}</p>
 
             <img

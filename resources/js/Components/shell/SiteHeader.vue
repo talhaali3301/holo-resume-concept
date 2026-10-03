@@ -119,8 +119,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
             </Link>
 
             <p class="room-readout">{{ room.name }}</p>
-            <p class="status-readout"><span class="status-dot" aria-hidden="true"></span> Online</p>
-            <p v-if="shell.sample" class="meta ml-1 hidden sm:block">Sample content</p>
 
             <button
                 ref="menuButton"
@@ -157,6 +155,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                 <Link :href="standardHref" class="menu-link" @click="closeMenu(false)">{{ standardLabel }}</Link>
             </nav>
             <button type="button" class="btn btn-primary mt-auto" @click="chooseContact">Work with me</button>
+            <p v-if="shell.sample" class="meta mt-4">Concept content</p>
         </div>
     </div>
 </template>

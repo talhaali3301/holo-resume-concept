@@ -27,7 +27,7 @@ const emit = defineEmits<{
                     <i aria-hidden="true"></i>
                     <span>
                         <span class="block text-xs tracking-[0.12em] text-muted uppercase">{{ milestone.period }}</span>
-                        <span class="block font-display text-xl leading-tight">{{ milestone.title }}</span>
+                        <span class="block font-heading text-xl leading-tight">{{ milestone.title }}</span>
                         <span v-if="milestone.slug === active" class="mt-1 block text-sm leading-relaxed text-muted">{{ milestone.summary }}</span>
                     </span>
                 </button>

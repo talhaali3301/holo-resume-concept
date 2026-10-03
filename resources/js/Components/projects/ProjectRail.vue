@@ -36,7 +36,7 @@ const emit = defineEmits<{
                 <span v-if="project.slug === selectedSlug" class="text-xs tracking-[0.14em] text-cyan uppercase">Viewing</span>
                 <span v-else-if="project.slug === hoveredSlug" class="text-xs tracking-[0.14em] text-muted uppercase">Highlighted</span>
             </span>
-            <span class="mt-2 block font-display text-2xl leading-none">{{ project.title }}</span>
+            <span class="mt-2 block font-heading text-2xl leading-none">{{ project.title }}</span>
             <span v-if="project.summary" class="mt-2 block text-sm leading-relaxed text-muted">{{ project.summary }}</span>
         </button>
     </nav>

@@ -63,7 +63,7 @@ export function pixelRatioCap(): [number, number] {
 
     const narrow = window.matchMedia('(max-width: 800px)').matches
 
-    return narrow ? [1, 1.15] : [1, 1.5]
+    return narrow ? [1, 1.5] : [1, 2]
 }
 
 export function detectWebGL(): boolean {

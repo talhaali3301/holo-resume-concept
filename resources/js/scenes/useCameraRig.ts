@@ -6,7 +6,11 @@ export interface PoseTarget {
     look: Vector3
 }
 
-export function useCameraRig(readPose: (target: PoseTarget) => void, motion: () => boolean, pulse?: (elapsed: number, moving: boolean) => void): void {
+export function useCameraRig(
+    readPose: (target: PoseTarget, elapsed: number) => void,
+    motion: () => boolean,
+    pulse?: (elapsed: number, moving: boolean) => void,
+): void {
     const { camera, invalidate } = useTres()
     const { onBeforeRender } = useLoop()
     const position = new Vector3()
@@ -21,7 +25,7 @@ export function useCameraRig(readPose: (target: PoseTarget) => void, motion: () 
             return
         }
 
-        readPose({ position, look })
+        readPose({ position, look }, elapsed)
         const moving = motion()
 
         if (!primed || !moving) {

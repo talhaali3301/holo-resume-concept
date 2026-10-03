@@ -1,6 +1,7 @@
-import { Mesh, PlaneGeometry, ShaderMaterial } from 'three'
+import { Group, Mesh, PlaneGeometry, ShaderMaterial } from 'three'
+import { Reflector } from 'three/addons/objects/Reflector.js'
 
-const vertexShader = `
+const gridVertexShader = `
 varying vec2 vUv;
 void main() {
   vUv = uv;
@@ -8,7 +9,7 @@ void main() {
 }
 `
 
-const fragmentShader = `
+const gridFragmentShader = `
 varying vec2 vUv;
 uniform float uTime;
 uniform float uMotion;
@@ -18,27 +19,58 @@ void main() {
   vec2 grid = abs(fract(gridUv - 0.5) - 0.5) / fw;
   float line = 1.0 - min(min(grid.x, grid.y), 1.0);
   line *= smoothstep(0.22, 0.04, max(fw.x, fw.y));
-  float fade = smoothstep(0.04, 0.18, vUv.y) * (1.0 - smoothstep(0.48, 0.78, vUv.y));
-  fade *= smoothstep(0.0, 0.08, vUv.x) * (1.0 - smoothstep(0.92, 1.0, vUv.x));
-  float pulse = uMotion > 0.5 ? 0.82 + 0.18 * sin(uTime * 0.7) : 0.9;
-  vec3 base = vec3(0.027, 0.04, 0.07);
-  vec3 glow = vec3(0.48, 0.86, 0.96);
-  vec3 color = mix(base, glow, line * 0.45 * fade * pulse);
-  gl_FragColor = vec4(color, 1.0);
+  float distanceFade = 1.0 - smoothstep(0.0, 0.85, vUv.y);
+  float edgeFade = smoothstep(0.0, 0.1, vUv.x) * (1.0 - smoothstep(0.9, 1.0, vUv.x));
+  float pulse = uMotion > 0.5 ? 0.85 + 0.15 * sin(uTime * 0.7) : 1.0;
+  float alpha = line * distanceFade * edgeFade * pulse * 0.08;
+  vec3 glow = vec3(0.37, 0.9, 1.0);
+  gl_FragColor = vec4(glow, alpha);
 }
 `
 
-export function createFloor(width: number, depth: number): { mesh: Mesh; material: ShaderMaterial } {
+export interface SceneFloor {
+    group: Group
+    material: ShaderMaterial
+    reflector: Reflector
+    dispose: () => void
+}
+
+export function createFloor(width: number, depth: number): SceneFloor {
+    const group = new Group()
+
+    const reflector = new Reflector(new PlaneGeometry(width, depth), {
+        color: 0x15202f,
+        textureWidth: 1024,
+        textureHeight: 1024,
+        clipBias: 0.0005,
+    })
+    reflector.rotation.x = -Math.PI / 2
+    group.add(reflector)
+
     const material = new ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
             uMotion: { value: 0 },
         },
-        vertexShader,
-        fragmentShader,
+        vertexShader: gridVertexShader,
+        fragmentShader: gridFragmentShader,
+        transparent: true,
+        depthWrite: false,
     })
-    const mesh = new Mesh(new PlaneGeometry(width, depth), material)
-    mesh.rotation.x = -Math.PI / 2
+    const grid = new Mesh(new PlaneGeometry(width, depth), material)
+    grid.rotation.x = -Math.PI / 2
+    grid.position.y = 0.003
+    group.add(grid)
 
-    return { mesh, material }
+    return {
+        group,
+        material,
+        reflector,
+        dispose: () => {
+            reflector.geometry.dispose()
+            ;(reflector.material as { dispose: () => void }).dispose()
+            grid.geometry.dispose()
+            material.dispose()
+        },
+    }
 }

@@ -12,8 +12,8 @@ export default defineConfig({
             input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
             fonts: [
-                bunny('Instrument Sans', { weights: [400, 500, 600, 700], optimizedFallbacks: false }),
-                bunny('Instrument Serif', { weights: [400], optimizedFallbacks: false }),
+                bunny('Space Grotesk', { weights: [400, 500, 600, 700], optimizedFallbacks: false }),
+                bunny('JetBrains Mono', { weights: [400, 500, 600], optimizedFallbacks: false }),
             ],
         }),
         vue({

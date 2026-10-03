@@ -19,11 +19,11 @@ const room = computed(() => {
     const path = page.url.split('?')[0] ?? '/'
 
     if (path.startsWith('/projects')) {
-        return { id: 'hall', hint: 'Choose a work. Escape closes the record.' }
+        return { id: 'hall', hint: 'Choose a project. Escape closes it.' }
     }
 
     if (path.startsWith('/skills')) {
-        return { id: 'observatory', hint: 'Choose a skill. Escape closes its record.' }
+        return { id: 'observatory', hint: 'Choose a skill. Escape closes it.' }
     }
 
     return { id: 'lobby', hint: 'Look around, then choose a room.' }
@@ -97,6 +97,6 @@ onUnmounted(() => {
             <Link class="btn btn-quiet" :href="standardHref">{{ standardLabel }}</Link>
         </div>
     </div>
-    <div class="room-veil" :class="{ 'is-on': veil }" aria-hidden="true">Moving</div>
-    <ContactDialog :open="contactOpen" :contact="shell.contact" :sample="shell.sample" @close="closeContact" />
+    <div class="room-veil" :class="{ 'is-on': veil }" aria-hidden="true"></div>
+    <ContactDialog :open="contactOpen" :contact="shell.contact" @close="closeContact" />
 </template>
