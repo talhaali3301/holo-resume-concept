@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref, type Ref } from 'vue'
+import { onUnmounted, ref, watch, type Ref } from 'vue'
 
 export interface StageScale {
     root: Ref<HTMLElement | null>
@@ -40,16 +40,32 @@ export function useStageScale(referenceWidth = 1440, referenceHeight = 900, maxS
         scale.value = Math.min(availableWidth / referenceWidth, availableHeight / referenceHeight, maxScale)
     }
 
-    onMounted(() => {
-        measure()
+    // `root` can attach after mount (e.g. a `v-if` branch that resolves once
+    // the viewport's own size is known, as with the desktop/mobile split),
+    // or detach and reattach to a new element entirely, so the observer is
+    // (re)created whenever the ref itself changes rather than once in
+    // `onMounted`.
+    watch(
+        root,
+        (el) => {
+            observer?.disconnect()
+            observer = null
 
-        if (root.value?.parentElement && 'ResizeObserver' in window) {
-            observer = new ResizeObserver(() => measure())
-            observer.observe(root.value.parentElement)
-        } else {
-            window.addEventListener('resize', measure)
-        }
-    })
+            if (!el?.parentElement) {
+                return
+            }
+
+            measure()
+
+            if (typeof ResizeObserver !== 'undefined') {
+                observer = new ResizeObserver(() => measure())
+                observer.observe(el.parentElement)
+            } else {
+                window.addEventListener('resize', measure)
+            }
+        },
+        { immediate: true, flush: 'post' },
+    )
 
     onUnmounted(() => {
         observer?.disconnect()

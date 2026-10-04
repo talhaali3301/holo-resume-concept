@@ -11,10 +11,10 @@ const page = usePage<{ shell: Shell }>()
 const shell = computed(() => page.props.shell)
 const contactOpen = ref(false)
 
-// The Lobby owns its own full-viewport chrome (brand, nav, depth rail) per its
-// own design — it does not sit inside the shared top nav / room wrapper that
-// Projects and Skills still use.
-const isLobby = computed(() => page.component === 'Lobby')
+// Lobby and Projects own their own full-viewport chrome (brand, nav, depth
+// rail) per their own design — they do not sit inside the shared top nav /
+// room wrapper that Skills still uses.
+const hasOwnChrome = computed(() => page.component === 'Lobby' || page.component === 'Projects')
 
 const gallery = computed(() => !page.url.includes('view=standard'))
 
@@ -46,7 +46,7 @@ watch(
 
 <template>
     <a href="#content" class="skip-link">Skip to content</a>
-    <template v-if="isLobby">
+    <template v-if="hasOwnChrome">
         <div :inert="contactOpen || undefined">
             <slot />
         </div>

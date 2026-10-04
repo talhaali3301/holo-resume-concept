@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3'
+import { Head, router, usePage } from '@inertiajs/vue3'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import ExhibitPreview from '@/Components/projects/ExhibitPreview.vue'
-import IdentityCore from '@/Components/shell/IdentityCore.vue'
+import DepthChrome, { type ScreenId } from '@/Components/shell/DepthChrome.vue'
+import { useOpenContact } from '@/composables/useContact'
+import { useMediaQuery } from '@/composables/useMediaQuery'
+import { useMotionToggle } from '@/composables/useMotionToggle'
 import { useStageScale } from '@/composables/useStageScale'
-import { relatedSkills, statusLabel, withView } from '@/lib/experience'
-import { exhibitSlot, slotFor } from '@/lib/exhibitOrbit'
-import { lockScroll, unlockScroll } from '@/lib/scrollLock'
+import { withView } from '@/lib/experience'
+import { countWord, slotMap, type ProjectSlot } from '@/lib/projectDeck'
 import PortfolioLayout from '@/Layouts/PortfolioLayout.vue'
-import type { PageMeta, Project, SkillRef, ViewMode } from '@/types/portfolio'
+import type { PageMeta, Project, Shell, SkillRef, ViewMode } from '@/types/portfolio'
 
 defineOptions({ layout: PortfolioLayout, inheritAttrs: false })
 
@@ -21,18 +22,19 @@ const props = defineProps<{
     meta: PageMeta
 }>()
 
+const page = usePage<{ shell: Shell }>()
+const brand = computed(() => page.props.shell.product)
+
+const openContact = useOpenContact()
+const isMobile = useMediaQuery('(max-width: 899px)')
 const { root: stageRoot, scale } = useStageScale(1440, 900)
-const trigger = ref<HTMLElement | null>(null)
-const hovered = ref<string | null>(null)
+const { reduced, toggle: toggleMotion } = useMotionToggle()
+
+const railRoutes: Record<ScreenId, string> = { lobby: props.routes.lobby, projects: props.routes.index, skills: props.routes.skills, contact: '#' }
+const standardHref = computed(() => withView(props.routes.index, 'standard'))
+const tagline = computed(() => `${countWord(props.projects.length)[0].toUpperCase()}${countWord(props.projects.length).slice(1)} pieces, one at a time.`)
+
 const front = ref(0)
-const panelRoot = ref<HTMLElement | null>(null)
-const closeButton = ref<HTMLButtonElement | null>(null)
-
-const previewVariants = ['schedule', 'grid', 'pulse', 'contour', 'hub', 'lanes'] as const
-
-function previewFor(index: number) {
-    return previewVariants[index % previewVariants.length]
-}
 
 watch(
     () => props.selected?.slug,
@@ -50,56 +52,57 @@ watch(
     { immediate: true },
 )
 
-const CORE = { x: 720, y: 300 }
+interface DeckItem {
+    project: Project
+    index: number
+    slot: ProjectSlot
+}
 
-const exhibits = computed(() =>
-    props.projects.map((project, index) => ({
-        project,
-        slot: slotFor(index, front.value, props.projects.length),
-        geometry: exhibitSlot(slotFor(index, front.value, props.projects.length), props.projects.length),
-    })),
-)
+const deck = computed<DeckItem[]>(() => {
+    const slots = slotMap(front.value, props.projects.length)
 
+    return props.projects.map((project, index) => ({ project, index, slot: slots[index] }))
+})
 const frontProject = computed(() => props.projects[front.value] ?? null)
 const counter = computed(() => `${String(front.value + 1).padStart(2, '0')} / ${String(props.projects.length).padStart(2, '0')}`)
 
-function openExhibit(slug: string, event?: Event) {
+function pad(n: number) {
+    return String(n).padStart(2, '0')
+}
+
+const sheen = ref(false)
+
+watch(front, () => {
+    sheen.value = false
+    nextTick(() => {
+        sheen.value = true
+    })
+
+    nextTick(() => {
+        stageRoot.value?.querySelector<HTMLElement>('[data-slot="front"] .projects-sheet__reading')?.focus()
+    })
+})
+
+function selectProject(slug: string) {
     const project = props.projects.find((item) => item.slug === slug)
 
-    if (!project) {
+    if (!project || project.slug === frontProject.value?.slug) {
         return
     }
 
-    trigger.value = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null
     router.visit(withView(project.href, props.view), { preserveScroll: true })
 }
 
-function closePanel() {
-    const slug = props.selected?.slug
-    const focusTarget = trigger.value
-
-    router.visit(withView(props.routes.index, props.view), {
-        preserveScroll: true,
-        onFinish: () => {
-            const fallback = slug ? document.getElementById(`exhibit-${slug}`) : null
-            ;(focusTarget ?? fallback)?.focus()
-        },
-    })
-}
-
 function step(direction: number) {
-    if (props.projects.length === 0) {
+    if (props.projects.length < 2) {
         return
     }
 
-    front.value = (front.value + direction + props.projects.length) % props.projects.length
+    const nextIndex = (front.value + direction + props.projects.length) % props.projects.length
+    const project = props.projects[nextIndex]
 
-    if (props.selected) {
-        const project = props.projects[front.value]
-
-        if (project) {
-            router.visit(withView(project.href, props.view), { preserveScroll: true })
-        }
+    if (project) {
+        router.visit(withView(project.href, props.view), { preserveScroll: true })
     }
 }
 
@@ -113,13 +116,6 @@ function onKeydown(event: KeyboardEvent) {
         return
     }
 
-    if (event.key === 'Escape' && props.selected) {
-        event.preventDefault()
-        closePanel()
-
-        return
-    }
-
     if (event.key === 'ArrowLeft') {
         event.preventDefault()
         step(-1)
@@ -129,164 +125,267 @@ function onKeydown(event: KeyboardEvent) {
     }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+const leaving = ref(false)
 
-watch(
-    () => props.selected,
-    async (selected) => {
-        if (!selected) {
-            return
-        }
+function onNavigate(id: ScreenId) {
+    if (id === 'contact') {
+        openContact()
 
-        lockScroll()
-        await nextTick()
-        closeButton.value?.focus()
-    },
-    { immediate: true },
-)
+        return
+    }
 
-watch(
-    () => props.selected,
-    (selected, previous) => {
-        if (!selected && previous) {
-            unlockScroll()
-        }
-    },
-)
+    const href = id === 'lobby' ? props.routes.lobby : id === 'skills' ? props.routes.skills : props.routes.index
 
-onUnmounted(() => {
-    if (props.selected) {
-        unlockScroll()
+    if (reduced.value) {
+        router.visit(href)
+
+        return
+    }
+
+    leaving.value = true
+    window.setTimeout(() => router.visit(href), 520)
+}
+
+const stackRef = ref<HTMLElement | null>(null)
+let rafId = 0
+let tx = 0
+let ty = 0
+let cx = 0
+let cy = 0
+
+function onPointerMove(event: PointerEvent) {
+    tx = (event.clientX / window.innerWidth - 0.5) * 2
+    ty = (event.clientY / window.innerHeight - 0.5) * 2
+}
+
+function onPointerLeave() {
+    tx = 0
+    ty = 0
+}
+
+function resetTilt() {
+    stackRef.value?.style.setProperty('--rx', '0deg')
+    stackRef.value?.style.setProperty('--ry', '0deg')
+    stackRef.value?.style.setProperty('--float', '0px')
+}
+
+function frame(now: number) {
+    if (!reduced.value && stackRef.value) {
+        const t = now / 1000
+        cx += (tx - cx) * 0.06
+        cy += (ty - cy) * 0.06
+        const rx = -cy * 3 + Math.sin(t * 0.5) * 0.4
+        const ry = cx * 4.5 + Math.sin(t * 0.37) * 0.7
+        stackRef.value.style.setProperty('--rx', `${rx.toFixed(3)}deg`)
+        stackRef.value.style.setProperty('--ry', `${ry.toFixed(3)}deg`)
+        stackRef.value.style.setProperty('--float', `${(Math.sin(t * 0.6) * 4).toFixed(2)}px`)
+    }
+
+    rafId = requestAnimationFrame(frame)
+}
+
+watch(reduced, (isReduced) => {
+    if (isReduced) {
+        resetTilt()
     }
 })
 
-function panelKeydown(event: KeyboardEvent) {
-    if (event.key === 'Escape') {
-        event.preventDefault()
-        closePanel()
-    }
-}
+onMounted(() => {
+    window.addEventListener('pointermove', onPointerMove)
+    window.addEventListener('pointerleave', onPointerLeave)
+    window.addEventListener('keydown', onKeydown)
+    rafId = requestAnimationFrame(frame)
+})
 
-const linkedSkills = computed(() => (props.selected ? relatedSkills(props.selected.skills, props.skills) : []))
+onUnmounted(() => {
+    window.removeEventListener('pointermove', onPointerMove)
+    window.removeEventListener('pointerleave', onPointerLeave)
+    window.removeEventListener('keydown', onKeydown)
+    cancelAnimationFrame(rafId)
+})
 </script>
 
 <template>
     <Head :title="meta.title">
         <meta head-key="description" name="description" :content="meta.description" />
     </Head>
-    <main id="content" :class="view === 'gallery' ? 'room-stage' : 'standard-page frame'">
+
+    <main id="content" :class="view === 'gallery' ? 'projects-viewport' : 'standard-page frame'">
         <template v-if="view === 'gallery'">
-            <div class="orbit-room orbit-room--desktop" :inert="selected ? true : undefined">
-                <div ref="stageRoot" class="stage-1440" :style="{ transform: `translate(-50%, -50%) scale(${scale})` }">
-                    <p class="hall-room-tag">ROOM 01</p>
-                    <h1 class="hall-title">Projects Hall</h1>
-                    <p class="hall-subtitle">
-                        An archive of built systems.
-                        {{ projects.length }} {{ projects.length === 1 ? 'exhibit' : 'exhibits' }}<template v-if="projects.some((p) => p.sample)">, sample data</template>.
-                    </p>
+            <div v-if="!isMobile" class="projects-stage-wrap">
+                <div
+                    ref="stageRoot"
+                    class="stage-1440 projects-stage"
+                    :class="{ calm: reduced, leaving }"
+                    :style="{ transform: `translate(-50%, -50%) scale(${scale})` }"
+                >
+                    <div class="projects-bloom" aria-hidden="true"></div>
 
-                    <svg class="orbit-svg" viewBox="0 0 1440 900" aria-hidden="true">
-                        <ellipse cx="706" cy="420" rx="800" ry="300" class="orbit-line" opacity="0.1" transform="rotate(4 706 420)" />
-                        <ellipse cx="706" cy="420" rx="580" ry="196" transform="rotate(4 706 420)" class="orbit-line" opacity="0.4" />
+                    <div class="projects-scene">
+                        <div ref="stackRef" class="projects-stack">
+                            <div class="projects-backdrop" aria-hidden="true">
+                                <span class="projects-backdrop__title">
+                                    <span class="projects-backdrop__index">01</span>
+                                    <h1 class="projects-backdrop__name">Projects</h1>
+                                </span>
+                                <span class="projects-backdrop__desc">Open the gallery and read each piece without leaving the page.</span>
+                            </div>
 
-                        <line
-                            v-for="exhibit in exhibits"
-                            :key="`line-${exhibit.project.slug}`"
-                            :x1="CORE.x"
-                            :y1="CORE.y"
-                            :x2="exhibit.geometry.left + exhibit.geometry.width / 2"
-                            :y2="exhibit.geometry.top + exhibit.geometry.height / 2"
-                            class="connection-line"
-                            :class="{
-                                'is-active': hovered === exhibit.project.slug || (selected && exhibit.slot === 0),
-                                'is-selected': selected?.slug === exhibit.project.slug,
-                            }"
-                        />
-                    </svg>
+                            <component
+                                :is="item.slot === 'front' ? 'article' : item.slot === 'hidden' ? 'div' : 'button'"
+                                v-for="item in deck"
+                                :key="item.project.slug"
+                                class="projects-sheet"
+                                :class="[`slot-${item.slot}`, { sheen: sheen && item.slot === 'front' }]"
+                                :data-slot="item.slot"
+                                :type="item.slot !== 'front' && item.slot !== 'hidden' ? 'button' : undefined"
+                                :aria-label="item.slot !== 'front' && item.slot !== 'hidden' ? `Bring ${item.project.title} forward` : undefined"
+                                :aria-hidden="item.slot === 'hidden' ? 'true' : undefined"
+                                :tabindex="item.slot === 'hidden' ? -1 : undefined"
+                                :inert="item.slot === 'hidden' ? true : undefined"
+                                @click="item.slot !== 'front' && item.slot !== 'hidden' && selectProject(item.project.slug)"
+                            >
+                                <div class="projects-sheet__pane">
+                                    <span class="projects-sheet__pane-index">{{ pad(item.index + 1) }}</span>
+                                    <span class="projects-sheet__pane-title">{{ item.project.title }}</span>
+                                    <span class="projects-sheet__pane-reveal">
+                                        <span class="projects-sheet__pane-desc">{{ item.project.label }}</span>
+                                        <span class="projects-chip">
+                                            Bring forward
+                                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 8h11M8 3l5 5-5 5" /></svg>
+                                        </span>
+                                    </span>
+                                </div>
 
-                    <IdentityCore :cx="CORE.x" :cy="CORE.y" :size="56" :halo-scale="4" />
+                                <div class="projects-sheet__reading" tabindex="-1">
+                                    <div class="projects-sheet__meta-row">
+                                        <span class="projects-sheet__counter">{{ counter }}<template v-if="item.project.sample">&nbsp;&middot;&nbsp;SAMPLE PROJECT</template></span>
+                                        <span class="projects-sheet__focus"><span class="projects-sheet__focus-dot"></span>IN FOCUS</span>
+                                    </div>
+                                    <h2 class="projects-sheet__title">{{ item.project.title }}</h2>
+                                    <div class="projects-sheet__shot">
+                                        <img v-if="item.project.image" :src="item.project.image" :alt="item.project.imageAlt" loading="lazy" />
+                                        <span v-else>[ PROJECT SCREENSHOT ]</span>
+                                    </div>
+                                    <div class="projects-sheet__grid">
+                                        <div class="projects-sheet__field">
+                                            <span class="projects-sheet__field-label">THE BRIEF</span>
+                                            <span class="projects-sheet__field-value">{{ item.project.purpose }}</span>
+                                        </div>
+                                        <div class="projects-sheet__field">
+                                            <span class="projects-sheet__field-label">WHAT I BUILT</span>
+                                            <span class="projects-sheet__field-value">{{ item.project.built }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="projects-sheet__stack">
+                                        <span v-for="tech in item.project.technologies" :key="tech" class="projects-sheet__techchip">{{ tech }}</span>
+                                    </div>
+                                    <div class="projects-sheet__actions">
+                                        <div class="projects-sheet__links">
+                                            <a v-if="item.project.caseStudyUrl" class="projects-sheet__case" :href="item.project.caseStudyUrl" target="_blank" rel="noopener noreferrer">
+                                                <span>Read the case study</span>
+                                                <span class="projects-sheet__case-icon">
+                                                    <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="#0A0C10" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
+                                                </span>
+                                            </a>
+                                            <a v-if="item.project.repositoryUrl" class="projects-sheet__source" :href="item.project.repositoryUrl" target="_blank" rel="noopener noreferrer">View source</a>
+                                        </div>
+                                        <div class="projects-sheet__nav">
+                                            <button type="button" class="projects-sheet__nav-btn" aria-label="Previous project" :disabled="projects.length < 2" @click.stop="step(-1)">
+                                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M11 3L5 9l6 6" /></svg>
+                                            </button>
+                                            <button type="button" class="projects-sheet__nav-btn" aria-label="Next project" :disabled="projects.length < 2" @click.stop="step(1)">
+                                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3l6 6-6 6" /></svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </component>
 
-                    <button
-                        v-for="exhibit in exhibits"
-                        :id="`exhibit-${exhibit.project.slug}`"
-                        :key="exhibit.project.slug"
-                        type="button"
-                        class="exhibit-frame"
-                        :class="{ 'is-front': exhibit.slot === 0, 'is-selected': selected?.slug === exhibit.project.slug }"
-                        :style="{
-                            left: `${exhibit.geometry.left}px`,
-                            top: `${exhibit.geometry.top}px`,
-                            width: `${exhibit.geometry.width}px`,
-                            height: `${exhibit.geometry.height}px`,
-                            opacity: selected && selected.slug !== exhibit.project.slug ? 0.38 : exhibit.geometry.opacity,
-                            zIndex: exhibit.geometry.z,
-                        }"
-                        :aria-current="selected?.slug === exhibit.project.slug ? 'true' : undefined"
-                        @mouseenter="hovered = exhibit.project.slug"
-                        @mouseleave="hovered = null"
-                        @focus="hovered = exhibit.project.slug"
-                        @blur="hovered = null"
-                        @click="openExhibit(exhibit.project.slug, $event)"
-                    >
-                        <span v-if="selected?.slug === exhibit.project.slug" class="exhibit-frame__case-tag">CASE FILE OPEN</span>
-                        <span class="exhibit-frame__preview">
-                            <img v-if="exhibit.project.image" :src="exhibit.project.image" :alt="exhibit.project.imageAlt" loading="lazy" />
-                            <ExhibitPreview v-else :variant="previewFor(projects.indexOf(exhibit.project))" />
-                        </span>
-                        <span class="exhibit-frame__plate">
-                            <span class="exhibit-frame__plate-index">{{ String(projects.indexOf(exhibit.project) + 1).padStart(2, '0') }}</span>
-                            <span class="exhibit-frame__title" :style="{ fontSize: `${exhibit.geometry.titleSize}px` }">{{ exhibit.project.title }}</span>
-                            <span class="exhibit-frame__category" :style="{ fontSize: `${exhibit.geometry.categorySize}px` }">{{ exhibit.project.category }}</span>
-                        </span>
-                    </button>
-
-                    <div v-if="projects.length === 0" class="hall-empty">No exhibits yet. Add projects in content/portfolio.php.</div>
-
-                    <div class="hall-nav">
-                        <button type="button" class="hall-nav__btn" aria-label="Previous exhibit" @click="step(-1)">&larr;</button>
-                        <span class="hall-nav__counter">{{ counter }}</span>
-                        <button type="button" class="hall-nav__btn" aria-label="Next exhibit" @click="step(1)">&rarr;</button>
+                            <p v-if="projects.length === 0" class="projects-empty">No exhibits yet. Add projects in content/portfolio.php.</p>
+                        </div>
                     </div>
-                    <p class="hall-nav__hint">Select an exhibit to open its case file.</p>
 
-                    <div class="hall-room-links">
-                        <Link :href="routes.lobby" class="room-link">
-                            <span class="marker room-link__marker"><svg width="40%" height="40%" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.4" /></svg></span>
-                            <span class="room-link__text"><span class="room-link__index">00 &middot; BACK</span><span class="room-link__name">Lobby</span></span>
-                        </Link>
-                        <Link :href="routes.skills" class="room-link hall-room-links__next">
-                            <span class="room-link__text" style="text-align: right"><span class="room-link__index">02 &middot; NEXT ROOM</span><span class="room-link__name">Skills Observatory</span></span>
-                            <span class="marker room-link__marker"><svg width="40%" height="40%" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="1.4" /></svg></span>
-                        </Link>
+                    <DepthChrome :current="'projects'" :reduced="reduced" :routes="railRoutes" :standard-href="standardHref" :brand="brand" @toggle-motion="toggleMotion" @navigate="onNavigate" />
+
+                    <div class="projects-voice">
+                        <span class="projects-voice__line">{{ tagline }}</span>
+                        <span class="projects-voice__tag">Concept &middot; Sample content</span>
                     </div>
+                    <div class="projects-hint">Click any pane to bring it forward</div>
                 </div>
             </div>
 
-            <div class="orbit-room orbit-room--mobile" :inert="selected ? true : undefined">
-                <div class="hall-mobile">
-                    <p class="hall-room-tag">ROOM 01</p>
-                    <h1 class="hall-title hall-title--mobile">Projects Hall</h1>
-                    <div class="hall-mobile__track">
-                        <div v-for="project in projects" :key="project.slug" class="hall-mobile__slide">
-                            <button type="button" class="exhibit-frame is-front hall-mobile__frame" @click="openExhibit(project.slug, $event)">
-                                <span class="exhibit-frame__preview">
-                                    <img v-if="project.image" :src="project.image" :alt="project.imageAlt" loading="lazy" />
-                                    <ExhibitPreview v-else :variant="previewFor(projects.indexOf(project))" />
+            <div v-else class="projects-mobile">
+                <div class="projects-mobile__head">
+                    <p class="projects-mobile__tag">Projects</p>
+                    <h1 class="projects-mobile__title">{{ tagline }}</h1>
+                </div>
+
+                <p v-if="projects.length === 0" class="projects-empty">No exhibits yet. Add projects in content/portfolio.php.</p>
+
+                <template v-else-if="frontProject">
+                    <div class="projects-mobile__tabs" role="tablist" aria-label="Projects">
+                        <button
+                            v-for="(project, i) in projects"
+                            :key="project.slug"
+                            type="button"
+                            class="projects-mobile__tab"
+                            :class="{ 'is-active': i === front }"
+                            role="tab"
+                            :aria-selected="i === front"
+                            @click="selectProject(project.slug)"
+                        >
+                            <span class="projects-mobile__tab-index">{{ pad(i + 1) }}</span>{{ project.title }}
+                        </button>
+                    </div>
+
+                    <div class="projects-mobile__sheet">
+                        <div class="projects-sheet__meta-row">
+                            <span class="projects-sheet__counter">{{ counter }}<template v-if="frontProject.sample">&nbsp;&middot;&nbsp;SAMPLE PROJECT</template></span>
+                        </div>
+                        <h2 class="projects-sheet__title projects-sheet__title--mobile">{{ frontProject.title }}</h2>
+                        <div class="projects-sheet__shot">
+                            <img v-if="frontProject.image" :src="frontProject.image" :alt="frontProject.imageAlt" loading="lazy" />
+                            <span v-else>[ PROJECT SCREENSHOT ]</span>
+                        </div>
+                        <div class="projects-sheet__grid projects-sheet__grid--mobile">
+                            <div class="projects-sheet__field">
+                                <span class="projects-sheet__field-label">THE BRIEF</span>
+                                <span class="projects-sheet__field-value">{{ frontProject.purpose }}</span>
+                            </div>
+                            <div class="projects-sheet__field">
+                                <span class="projects-sheet__field-label">WHAT I BUILT</span>
+                                <span class="projects-sheet__field-value">{{ frontProject.built }}</span>
+                            </div>
+                        </div>
+                        <div class="projects-sheet__stack">
+                            <span v-for="tech in frontProject.technologies" :key="tech" class="projects-sheet__techchip">{{ tech }}</span>
+                        </div>
+                        <div class="projects-sheet__links">
+                            <a v-if="frontProject.caseStudyUrl" class="projects-sheet__case" :href="frontProject.caseStudyUrl" target="_blank" rel="noopener noreferrer">
+                                <span>Read the case study</span>
+                                <span class="projects-sheet__case-icon">
+                                    <svg width="20" height="20" viewBox="0 0 22 22" fill="none" stroke="#0A0C10" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
                                 </span>
-                                <span class="exhibit-frame__plate">
-                                    <span class="exhibit-frame__plate-index">{{ String(projects.indexOf(project) + 1).padStart(2, '0') }}</span>
-                                    <span class="exhibit-frame__title">{{ project.title }}</span>
-                                    <span class="exhibit-frame__category">{{ project.category }}</span>
-                                </span>
+                            </a>
+                            <a v-if="frontProject.repositoryUrl" class="projects-sheet__source" :href="frontProject.repositoryUrl" target="_blank" rel="noopener noreferrer">View source</a>
+                        </div>
+                        <div class="projects-mobile__nav">
+                            <button type="button" class="projects-sheet__nav-btn" aria-label="Previous project" :disabled="projects.length < 2" @click="step(-1)">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M11 3L5 9l6 6" /></svg>
+                            </button>
+                            <button type="button" class="projects-sheet__nav-btn" aria-label="Next project" :disabled="projects.length < 2" @click="step(1)">
+                                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3l6 6-6 6" /></svg>
                             </button>
                         </div>
                     </div>
-                    <p class="hall-nav__hint">Swipe, then tap an exhibit to open its case file.</p>
-                </div>
-                <div class="hall-mobile__bar">
-                    <Link :href="routes.lobby" class="room-link"><span class="marker room-link__marker" style="width: 36px; height: 36px"><svg width="40%" height="40%" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.4" /></svg></span></Link>
-                    <Link :href="routes.skills" class="room-link"><span class="marker room-link__marker" style="width: 36px; height: 36px"><svg width="40%" height="40%" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="1.4" /></svg></span></Link>
+                </template>
+
+                <div class="projects-mobile__bar">
+                    <a class="projects-mobile__link" :href="routes.lobby" @click.prevent="onNavigate('lobby')">Lobby</a>
+                    <a class="projects-mobile__link" :href="routes.skills" @click.prevent="onNavigate('skills')">Skills</a>
+                    <button type="button" class="projects-mobile__link" @click="openContact">Contact</button>
                 </div>
             </div>
         </template>
@@ -296,88 +395,42 @@ const linkedSkills = computed(() => (props.selected ? relatedSkills(props.select
             <div class="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <h1 class="page-title">Projects</h1>
-                    <p class="lede">An archive of built systems, read as a list.</p>
+                    <p class="lede">{{ tagline }}</p>
                 </div>
                 <div class="flex flex-wrap gap-3">
-                    <Link :href="routes.lobby" class="btn btn-ghost">Lobby</Link>
+                    <a :href="routes.lobby" class="btn btn-ghost">Lobby</a>
                     <button type="button" class="btn btn-primary" @click="setView('gallery')">Show the hall</button>
                 </div>
             </div>
             <p v-if="projects.length === 0" class="mt-10 text-muted">No exhibits yet. Add projects in content/portfolio.php.</p>
-            <ul v-else class="standard-list mt-8">
-                <li v-for="project in projects" :key="project.slug">
-                    <button type="button" class="standard-row" @click="openExhibit(project.slug, $event)">
-                        <span class="standard-row__index">{{ String(projects.indexOf(project) + 1).padStart(2, '0') }}</span>
-                        <span>
-                            <span class="standard-row__title block">{{ project.title }}</span>
-                            <span class="standard-row__meta">{{ project.category }} &middot; {{ project.technologies.join(' / ') }}</span>
-                        </span>
-                        <span class="standard-row__arrow" aria-hidden="true">&rarr;</span>
-                    </button>
+            <ol v-else class="standard-projects mt-10">
+                <li v-for="(project, i) in projects" :id="`project-${project.slug}`" :key="project.slug" class="standard-project">
+                    <div class="standard-project__head">
+                        <span class="standard-project__index">{{ pad(i + 1) }}</span>
+                        <div>
+                            <h2 class="standard-project__title">{{ project.title }}</h2>
+                            <p class="standard-project__label">{{ project.label }}</p>
+                        </div>
+                    </div>
+                    <div class="standard-project__grid">
+                        <div>
+                            <span class="case-file__label">The brief</span>
+                            <p class="standard-project__text">{{ project.purpose }}</p>
+                        </div>
+                        <div>
+                            <span class="case-file__label">What I built</span>
+                            <p class="standard-project__text">{{ project.built }}</p>
+                        </div>
+                    </div>
+                    <div class="standard-project__stack">
+                        <span v-for="tech in project.technologies" :key="tech" class="badge">{{ tech }}</span>
+                    </div>
+                    <div v-if="project.caseStudyUrl || project.repositoryUrl" class="standard-project__links">
+                        <a v-if="project.caseStudyUrl" class="btn btn-primary" :href="project.caseStudyUrl" target="_blank" rel="noopener noreferrer">Read the case study</a>
+                        <a v-if="project.repositoryUrl" class="btn-quiet" :href="project.repositoryUrl" target="_blank" rel="noopener noreferrer">View source</a>
+                    </div>
                 </li>
-            </ul>
+            </ol>
         </template>
-
-        <div
-            v-if="selected"
-            ref="panelRoot"
-            class="case-file"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="case-file-title"
-            @keydown="panelKeydown"
-        >
-            <div class="flex items-start justify-between gap-3">
-                <p class="meta">CASE FILE {{ String(front + 1).padStart(2, '0') }} / {{ String(projects.length).padStart(2, '0') }}</p>
-                <div class="flex items-center gap-2">
-                    <span v-if="selected.sample" class="badge badge-gold">Sample data</span>
-                    <button ref="closeButton" type="button" class="btn btn-ghost" style="min-height: 44px" @click="closePanel">Close</button>
-                </div>
-            </div>
-            <h2 id="case-file-title" class="mt-4 mb-1 font-heading text-4xl font-normal tracking-tight">{{ selected.title }}</h2>
-            <p class="mb-0" style="color: var(--color-gold); font-size: 0.85rem; letter-spacing: 0.04em">{{ selected.category }}</p>
-            <p class="mt-3 text-sm leading-relaxed" style="color: var(--color-bright)">{{ selected.summary }}</p>
-
-            <dl class="mt-4">
-                <div v-if="selected.purpose" class="case-file__row">
-                    <dt class="case-file__label">Purpose</dt>
-                    <dd class="case-file__value">{{ selected.purpose }}</dd>
-                </div>
-                <div v-if="selected.role" class="case-file__row">
-                    <dt class="case-file__label">Role</dt>
-                    <dd class="case-file__value">{{ selected.role }}</dd>
-                </div>
-                <div v-if="selected.technologies.length" class="case-file__row">
-                    <dt class="case-file__label">Stack</dt>
-                    <dd class="case-file__value">{{ selected.technologies.join(' / ') }}</dd>
-                </div>
-                <div v-if="selected.features.length" class="case-file__row">
-                    <dt class="case-file__label">Capabilities</dt>
-                    <dd class="case-file__value">
-                        <span v-for="feature in selected.features" :key="feature" class="block">{{ feature }}</span>
-                    </dd>
-                </div>
-                <div v-if="linkedSkills.length" class="case-file__row">
-                    <dt class="case-file__label">Skills</dt>
-                    <dd class="case-file__value">
-                        <Link v-for="(skill, i) in linkedSkills" :key="skill.slug" :href="skill.href" class="mr-1">{{ skill.title }}<template v-if="i < linkedSkills.length - 1">, </template></Link>
-                    </dd>
-                </div>
-                <div v-if="statusLabel(selected.status)" class="case-file__row">
-                    <dt class="case-file__label">Status</dt>
-                    <dd class="case-file__value">{{ statusLabel(selected.status) }}</dd>
-                </div>
-            </dl>
-
-            <div v-if="selected.demoUrl || selected.repositoryUrl" class="mt-5 flex flex-wrap items-center gap-4">
-                <a v-if="selected.demoUrl" class="btn btn-primary" :href="selected.demoUrl" target="_blank" rel="noopener noreferrer">Live demo</a>
-                <a v-if="selected.repositoryUrl" class="btn-quiet" :href="selected.repositoryUrl" target="_blank" rel="noopener noreferrer">Repository</a>
-            </div>
-
-            <div class="mt-6 flex items-center gap-3 border-t pt-4" style="border-color: var(--color-line)">
-                <button type="button" class="btn btn-ghost" @click="step(-1)">Previous</button>
-                <button type="button" class="btn btn-ghost" @click="step(1)">Next</button>
-            </div>
-        </div>
     </main>
 </template>
