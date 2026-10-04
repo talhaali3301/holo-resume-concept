@@ -42,6 +42,7 @@ final class PortfolioCatalog
      *     product: string,
      *     name: string|null,
      *     role: string,
+     *     stack: string,
      *     headline: string,
      *     lede: string,
      *     body: string,
@@ -200,7 +201,7 @@ final class PortfolioCatalog
 
     /**
      * @param  array<string, mixed>  $raw
-     * @return array{sample: bool, brand: string, product: string, name: string|null, role: string, headline: string, lede: string, body: string, availability: string}
+     * @return array{sample: bool, brand: string, product: string, name: string|null, role: string, stack: string, headline: string, lede: string, body: string, availability: string}
      */
     private function prepareIdentity(array $raw): array
     {
@@ -210,6 +211,7 @@ final class PortfolioCatalog
             'product' => $this->line($raw['product'] ?? null, 80) ?? 'Holo Resume',
             'name' => $this->line($raw['name'] ?? null, 80),
             'role' => $this->line($raw['role'] ?? null, 120) ?? 'Web application developer',
+            'stack' => $this->line($raw['stack'] ?? null, 120) ?? 'Laravel / Vue / Product Engineering',
             'headline' => $this->line($raw['headline'] ?? null, 180) ?? 'Web application developer',
             'lede' => $this->line($raw['lede'] ?? null, 600) ?? 'A portfolio you can walk through, with a standard reading view beside it.',
             'body' => $this->block($raw['body'] ?? null, 2000) ?? '',
@@ -373,8 +375,11 @@ final class PortfolioCatalog
             $projects[] = [
                 'slug' => $slug,
                 'title' => $title,
+                'category' => $this->line($entry['category'] ?? null, 60) ?? '',
+                'label' => $this->line($entry['label'] ?? null, 120) ?? '',
                 'summary' => $this->line($entry['summary'] ?? null, 280) ?? '',
                 'purpose' => $this->block($entry['purpose'] ?? null, 600) ?? '',
+                'built' => $this->block($entry['built'] ?? null, 600) ?? '',
                 'role' => $this->line($entry['role'] ?? null, 240) ?? '',
                 'technologies' => $this->lines($entry['technologies'] ?? null),
                 'features' => $this->lines($entry['features'] ?? null),
@@ -383,6 +388,7 @@ final class PortfolioCatalog
                 'imageNote' => $this->line($entry['image_note'] ?? null, 180),
                 'demoUrl' => $this->httpsUrl($entry['demo_url'] ?? null),
                 'repositoryUrl' => $this->httpsUrl($entry['repository_url'] ?? null),
+                'caseStudyUrl' => $this->httpsUrl($entry['case_study_url'] ?? null),
                 'caseStudy' => $this->block($entry['case_study'] ?? null, 4000),
                 'skills' => $skills,
                 'status' => in_array($status, ['live', 'concept', 'in_progress', 'archived'], true) ? $status : null,

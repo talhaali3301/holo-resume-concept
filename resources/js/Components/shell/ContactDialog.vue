@@ -77,7 +77,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
             aria-labelledby="contact-title"
         >
             <div class="flex items-start justify-between gap-4">
-                <h2 id="contact-title" class="mb-0 font-heading text-4xl font-medium tracking-tight">{{ contact.headline }}</h2>
+                <h2 id="contact-title" class="mb-0 font-heading text-4xl font-normal tracking-tight">{{ contact.headline }}</h2>
                 <button ref="closeButton" type="button" class="btn btn-ghost" @click="emit('close')">Close</button>
             </div>
             <p v-if="contact.body" class="mt-4 text-muted leading-relaxed">{{ contact.body }}</p>
@@ -94,7 +94,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                     {{ link.label }}
                 </a>
             </div>
-            <p v-else class="mt-6 text-sm text-muted">Contact details coming soon.</p>
+            <p v-else class="mt-6 text-sm text-muted">Contact details are not configured yet.</p>
         </div>
     </div>
 </template>

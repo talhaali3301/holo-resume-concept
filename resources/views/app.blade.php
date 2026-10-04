@@ -23,7 +23,7 @@
             {!! json_encode($jsonLd, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) !!}
         </script>
         <style>
-            html, body { background: #070b14; color: #e8eef8; }
+            html, body { background: #07080f; color: #f3eee3; }
         </style>
         @vite(['resources/css/app.css', 'resources/js/app.ts'])
         @inertiaHead

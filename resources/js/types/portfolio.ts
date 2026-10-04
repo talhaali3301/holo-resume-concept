@@ -4,6 +4,7 @@ export interface Identity {
     product: string
     name: string | null
     role: string
+    stack: string
     headline: string
     lede: string
     body: string
@@ -28,8 +29,11 @@ export type ProjectStatus = 'live' | 'concept' | 'in_progress' | 'archived'
 export interface Project {
     slug: string
     title: string
+    category: string
+    label: string
     summary: string
     purpose: string
+    built: string
     role: string
     technologies: string[]
     features: string[]
@@ -38,6 +42,7 @@ export interface Project {
     imageNote: string | null
     demoUrl: string | null
     repositoryUrl: string | null
+    caseStudyUrl: string | null
     caseStudy: string | null
     skills: string[]
     status: ProjectStatus | null

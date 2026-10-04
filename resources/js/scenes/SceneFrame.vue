@@ -6,7 +6,7 @@ import { usePrefersReducedMotion } from '@/composables/usePrefersReducedMotion'
 defineOptions({ inheritAttrs: false })
 
 const props = defineProps<{
-    scene: 'lobby' | 'hall' | 'observatory'
+    scene: 'observatory'
     bindings?: Record<string, unknown>
     animating?: boolean
 }>()
@@ -27,9 +27,7 @@ const containerReady = ref(false)
 const tabVisible = ref(true)
 const parallax = ref({ x: 0, y: 0 })
 
-const loaders: Record<'lobby' | 'hall' | 'observatory', () => Promise<Component>> = {
-    lobby: () => import('@/scenes/LobbyScene.vue'),
-    hall: () => import('@/scenes/HallScene.vue'),
+const loaders: Record<'observatory', () => Promise<Component>> = {
     observatory: () => import('@/scenes/ObservatoryScene.vue'),
 }
 

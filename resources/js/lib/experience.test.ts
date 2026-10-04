@@ -1,15 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { layoutFrames, nextTrapIndex, relatedSkills, resolveView, withView } from '@/lib/experience'
+import { isCurrentPath, nextTrapIndex, relatedSkills, withView } from '@/lib/experience'
 import { layoutSkills } from '@/lib/skillLayout'
 
 describe('portfolio interaction helpers', () => {
-    it('resolves only the standard view as standard', () => {
-        expect(resolveView('standard')).toBe('standard')
-        expect(resolveView('gallery')).toBe('gallery')
-        expect(resolveView('nope')).toBe('gallery')
-        expect(resolveView(null)).toBe('gallery')
-    })
-
     it('adds and removes the view query without dropping other parameters', () => {
         expect(withView('/projects/demo', 'standard')).toBe('/projects/demo?view=standard')
         expect(withView('/projects/demo?view=standard', 'gallery')).toBe('/projects/demo')
@@ -36,13 +29,12 @@ describe('portfolio interaction helpers', () => {
         ])
     })
 
-    it('places gallery frames on alternating walls', () => {
-        const frames = layoutFrames(4)
-
-        expect(frames[0]?.position[0]).toBeLessThan(0)
-        expect(frames[1]?.position[0]).toBeGreaterThan(0)
-        expect(frames[2]?.position[2]).toBeLessThan(frames[0]?.position[2] ?? 0)
-        expect(layoutFrames(0)).toEqual([])
+    it('matches the current path including nested routes', () => {
+        expect(isCurrentPath('/projects/demo', '/projects')).toBe(true)
+        expect(isCurrentPath('/projects', '/projects')).toBe(true)
+        expect(isCurrentPath('/skills', '/projects')).toBe(false)
+        expect(isCurrentPath('/', '/')).toBe(true)
+        expect(isCurrentPath('/projects', '/')).toBe(false)
     })
 
     it('keeps skills in one category from sharing a position', () => {

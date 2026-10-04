@@ -1,45 +1,22 @@
 <script setup lang="ts">
-import { computed, onUnmounted, provide, ref, watch } from 'vue'
-import { Link, router, usePage } from '@inertiajs/vue3'
+import { computed, provide, ref, watch } from 'vue'
+import { usePage } from '@inertiajs/vue3'
 import ContactDialog from '@/Components/shell/ContactDialog.vue'
-import SiteHeader from '@/Components/shell/SiteHeader.vue'
+import TopNav from '@/Components/shell/TopNav.vue'
 import { openContactKey } from '@/composables/useContact'
-import { usePrefersReducedMotion } from '@/composables/usePrefersReducedMotion'
-import { withView } from '@/lib/experience'
 import { lockScroll, unlockScroll } from '@/lib/scrollLock'
 import type { Shell } from '@/types/portfolio'
 
 const page = usePage<{ shell: Shell }>()
 const shell = computed(() => page.props.shell)
 const contactOpen = ref(false)
-const veil = ref(false)
-const reduced = usePrefersReducedMotion()
 
-const room = computed(() => {
-    const path = page.url.split('?')[0] ?? '/'
-
-    if (path.startsWith('/projects')) {
-        return { id: 'hall', hint: 'Choose a project. Escape closes it.' }
-    }
-
-    if (path.startsWith('/skills')) {
-        return { id: 'observatory', hint: 'Choose a skill. Escape closes it.' }
-    }
-
-    return { id: 'lobby', hint: 'Look around, then choose a room.' }
-})
+// The Lobby owns its own full-viewport chrome (brand, nav, depth rail) per its
+// own design — it does not sit inside the shared top nav / room wrapper that
+// Projects and Skills still use.
+const isLobby = computed(() => page.component === 'Lobby')
 
 const gallery = computed(() => !page.url.includes('view=standard'))
-
-const standardHref = computed(() => {
-    const path = page.url.split('?')[0] ?? '/'
-    const base = path === '/' ? '/projects' : path
-    const next = page.url.includes('view=standard') ? 'gallery' : 'standard'
-
-    return withView(base, next)
-})
-
-const standardLabel = computed(() => (page.url.includes('view=standard') ? 'Show the space' : 'Standard view'))
 
 function openContact() {
     contactOpen.value = true
@@ -65,38 +42,23 @@ watch(
         contactOpen.value = false
     },
 )
-
-const stopStart = router.on('start', () => {
-    veil.value = !reduced.value
-})
-
-const stopFinish = router.on('finish', () => {
-    veil.value = false
-})
-
-onUnmounted(() => {
-    stopStart()
-    stopFinish()
-
-    if (contactOpen.value) {
-        unlockScroll()
-    }
-})
 </script>
 
 <template>
     <a href="#content" class="skip-link">Skip to content</a>
-    <div class="atmosphere" aria-hidden="true"></div>
-    <div class="app-shell" :class="{ 'is-gallery': gallery }" :inert="contactOpen || undefined">
-        <SiteHeader :shell="shell" @contact="openContact" />
-        <div class="room">
+    <template v-if="isLobby">
+        <div :inert="contactOpen || undefined">
             <slot />
         </div>
-        <div v-if="gallery" class="control-dock">
-            <p class="m-0">{{ room.hint }}</p>
-            <Link class="btn btn-quiet" :href="standardHref">{{ standardLabel }}</Link>
+    </template>
+    <template v-else>
+        <div class="atmosphere" aria-hidden="true"></div>
+        <TopNav :shell="shell" />
+        <div class="app-shell" :class="{ 'is-gallery': gallery }" :inert="contactOpen || undefined">
+            <div class="room">
+                <slot />
+            </div>
         </div>
-    </div>
-    <div class="room-veil" :class="{ 'is-on': veil }" aria-hidden="true"></div>
+    </template>
     <ContactDialog :open="contactOpen" :contact="shell.contact" @close="closeContact" />
 </template>

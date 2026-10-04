@@ -1,9 +1,5 @@
 import type { SkillRef, ViewMode } from '@/types/portfolio'
 
-export function resolveView(value: unknown): ViewMode {
-    return value === 'standard' ? 'standard' : 'gallery'
-}
-
 export function withView(href: string, view: ViewMode): string {
     const [path, query = ''] = href.split('?')
     const params = new URLSearchParams(query)
@@ -78,23 +74,6 @@ export function detectWebGL(): boolean {
     } catch {
         return false
     }
-}
-
-export interface FramePose {
-    position: [number, number, number]
-    rotationY: number
-}
-
-export function layoutFrames(count: number): FramePose[] {
-    return Array.from({ length: Math.max(0, count) }, (_, index) => {
-        const side = index % 2 === 0 ? -1 : 1
-        const row = Math.floor(index / 2)
-
-        return {
-            position: [side * 2.08, 1.48, -1.55 - row * 2.4],
-            rotationY: side < 0 ? Math.PI / 2 - 0.22 : -Math.PI / 2 + 0.22,
-        }
-    })
 }
 
 export function statusLabel(status: string | null): string | null {
