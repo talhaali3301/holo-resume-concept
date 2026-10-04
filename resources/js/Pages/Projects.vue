@@ -33,6 +33,7 @@ const { reduced, toggle: toggleMotion } = useMotionToggle()
 const railRoutes: Record<ScreenId, string> = { lobby: props.routes.lobby, projects: props.routes.index, skills: props.routes.skills, contact: '#' }
 const standardHref = computed(() => withView(props.routes.index, 'standard'))
 const tagline = computed(() => `${countWord(props.projects.length)[0].toUpperCase()}${countWord(props.projects.length).slice(1)} pieces, one at a time.`)
+const standardLede = computed(() => `${countWord(props.projects.length)[0].toUpperCase()}${countWord(props.projects.length).slice(1)} sample builds, read top to bottom.`)
 
 const front = ref(0)
 
@@ -210,7 +211,7 @@ onUnmounted(() => {
         <meta head-key="description" name="description" :content="meta.description" />
     </Head>
 
-    <main id="content" :class="view === 'gallery' ? 'projects-viewport' : 'standard-page frame'">
+    <main id="content" :class="view === 'gallery' ? 'projects-viewport' : 'projects-standard standard-page'">
         <template v-if="view === 'gallery'">
             <div v-if="!isMobile" class="projects-stage-wrap">
                 <div
@@ -228,7 +229,7 @@ onUnmounted(() => {
                                     <span class="projects-backdrop__index">01</span>
                                     <h1 class="projects-backdrop__name">Projects</h1>
                                 </span>
-                                <span class="projects-backdrop__desc">Open the gallery and read each piece without leaving the page.</span>
+                                <span class="projects-backdrop__desc">Step through the gallery without losing your place.</span>
                             </div>
 
                             <component
@@ -263,9 +264,8 @@ onUnmounted(() => {
                                         <span class="projects-sheet__focus"><span class="projects-sheet__focus-dot"></span>IN FOCUS</span>
                                     </div>
                                     <h2 class="projects-sheet__title">{{ item.project.title }}</h2>
-                                    <div class="projects-sheet__shot">
-                                        <img v-if="item.project.image" :src="item.project.image" :alt="item.project.imageAlt" loading="lazy" />
-                                        <span v-else>[ PROJECT SCREENSHOT ]</span>
+                                    <div v-if="item.project.image" class="projects-sheet__shot">
+                                        <img :src="item.project.image" :alt="item.project.imageAlt" loading="lazy" />
                                     </div>
                                     <div class="projects-sheet__grid">
                                         <div class="projects-sheet__field">
@@ -345,9 +345,8 @@ onUnmounted(() => {
                             <span class="projects-sheet__counter">{{ counter }}<template v-if="frontProject.sample">&nbsp;&middot;&nbsp;SAMPLE PROJECT</template></span>
                         </div>
                         <h2 class="projects-sheet__title projects-sheet__title--mobile">{{ frontProject.title }}</h2>
-                        <div class="projects-sheet__shot">
-                            <img v-if="frontProject.image" :src="frontProject.image" :alt="frontProject.imageAlt" loading="lazy" />
-                            <span v-else>[ PROJECT SCREENSHOT ]</span>
+                        <div v-if="frontProject.image" class="projects-sheet__shot">
+                            <img :src="frontProject.image" :alt="frontProject.imageAlt" loading="lazy" />
                         </div>
                         <div class="projects-sheet__grid projects-sheet__grid--mobile">
                             <div class="projects-sheet__field">
@@ -392,10 +391,10 @@ onUnmounted(() => {
 
         <template v-else>
             <p class="eyebrow">Standard view</p>
-            <div class="mt-3 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div class="standard-head mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h1 class="page-title">Projects</h1>
-                    <p class="lede">{{ tagline }}</p>
+                    <p class="lede">{{ standardLede }}</p>
                 </div>
                 <div class="flex flex-wrap gap-3">
                     <a :href="routes.lobby" class="btn btn-ghost">Lobby</a>
@@ -403,12 +402,15 @@ onUnmounted(() => {
                 </div>
             </div>
             <p v-if="projects.length === 0" class="mt-10 text-muted">No exhibits yet. Add projects in content/portfolio.php.</p>
-            <ol v-else class="standard-projects mt-10">
+            <ol v-else class="standard-projects">
                 <li v-for="(project, i) in projects" :id="`project-${project.slug}`" :key="project.slug" class="standard-project">
                     <div class="standard-project__head">
                         <span class="standard-project__index">{{ pad(i + 1) }}</span>
                         <div>
-                            <h2 class="standard-project__title">{{ project.title }}</h2>
+                            <div class="standard-project__title-row">
+                                <h2 class="standard-project__title">{{ project.title }}</h2>
+                                <span v-if="project.sample" class="standard-project__sample">Sample project</span>
+                            </div>
                             <p class="standard-project__label">{{ project.label }}</p>
                         </div>
                     </div>
@@ -423,7 +425,7 @@ onUnmounted(() => {
                         </div>
                     </div>
                     <div class="standard-project__stack">
-                        <span v-for="tech in project.technologies" :key="tech" class="badge">{{ tech }}</span>
+                        <span v-for="tech in project.technologies" :key="tech" class="projects-sheet__techchip">{{ tech }}</span>
                     </div>
                     <div v-if="project.caseStudyUrl || project.repositoryUrl" class="standard-project__links">
                         <a v-if="project.caseStudyUrl" class="btn btn-primary" :href="project.caseStudyUrl" target="_blank" rel="noopener noreferrer">Read the case study</a>

@@ -2385,6 +2385,7 @@
 .projects-sheet {
     position: absolute;
     box-sizing: border-box;
+    overflow: hidden;
     border: 0;
     border-radius: 18px;
     padding: 0;
@@ -2392,6 +2393,7 @@
     font: inherit;
     text-align: left;
     cursor: pointer;
+    z-index: 1;
     transition:
         left 0.95s var(--lobby-ease),
         top 0.95s var(--lobby-ease),
@@ -2405,6 +2407,40 @@
 
 .projects-sheet[data-slot='front'] {
     cursor: default;
+}
+
+/* Resting panes sit at slightly different real depths (rather than all at
+   z=0) so the 3D painter's order always matches their visual rank — without
+   this, two coplanar panes fall back to DOM order, which doesn't track rank
+   once `front` has rotated past the first few projects, and a hovered pane
+   could paint behind an unrelated neighbour. */
+.projects-sheet[data-slot='right-1'] {
+    z-index: 4;
+}
+
+.projects-sheet[data-slot='right-2'] {
+    z-index: 3;
+}
+
+.projects-sheet[data-slot='right-3'] {
+    z-index: 2;
+}
+
+.projects-sheet[data-slot='left'] {
+    z-index: 3;
+}
+
+.projects-sheet[data-slot='hidden'] {
+    z-index: 0;
+}
+
+.projects-sheet[data-slot='front'] {
+    z-index: 5;
+}
+
+.projects-sheet:hover,
+.projects-sheet:focus-visible {
+    z-index: 6;
 }
 
 .projects-sheet::after {
@@ -2443,8 +2479,9 @@
     top: -176px;
     width: 230px;
     height: 420px;
-    transform: translateZ(0) rotateY(40deg);
-    background: linear-gradient(180deg, #ffd08a 0%, #ffcb80 34%, rgba(255, 203, 128, 0.3) 100%);
+    transform: translateZ(12px) rotateY(40deg);
+    background-image: linear-gradient(180deg, #ffd08a 0%, #ffcb80 34%, rgba(255, 203, 128, 0.3) 100%);
+    background-color: #1a1108;
     border: 1px solid rgba(255, 255, 255, 0.6);
     box-shadow: 0 40px 70px rgba(0, 0, 0, 0.45);
     color: #1a1108;
@@ -2456,26 +2493,31 @@
     top: -176px;
     width: 210px;
     height: 420px;
-    transform: translateZ(0) rotateY(-40deg);
     box-shadow: 0 40px 70px rgba(0, 0, 0, 0.45);
     color: #1a1108;
 }
 
 .projects-sheet[data-slot='right-1'] {
     left: 206px;
-    background: linear-gradient(180deg, #ffb85c 0%, #ffb85c 34%, rgba(255, 184, 92, 0.3) 100%);
+    transform: translateZ(16px) rotateY(-40deg);
+    background-image: linear-gradient(180deg, #ffb85c 0%, #ffb85c 34%, rgba(255, 184, 92, 0.3) 100%);
+    background-color: #1a1108;
     border: 1px solid rgba(255, 255, 255, 0.55);
 }
 
 .projects-sheet[data-slot='right-2'] {
     left: 318px;
-    background: linear-gradient(180deg, #fab052 0%, #fab052 34%, rgba(250, 176, 82, 0.3) 100%);
+    transform: translateZ(8px) rotateY(-40deg);
+    background-image: linear-gradient(180deg, #fab052 0%, #fab052 34%, rgba(250, 176, 82, 0.3) 100%);
+    background-color: #1a1108;
     border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
 .projects-sheet[data-slot='right-3'] {
     left: 430px;
-    background: linear-gradient(180deg, #f2a548 0%, #f2a548 34%, rgba(242, 165, 72, 0.3) 100%);
+    transform: translateZ(0) rotateY(-40deg);
+    background-image: linear-gradient(180deg, #f2a548 0%, #f2a548 34%, rgba(242, 165, 72, 0.3) 100%);
+    background-color: #1a1108;
     border: 1px solid rgba(255, 255, 255, 0.45);
 }
 
@@ -2491,7 +2533,7 @@
 
 .projects-sheet[data-slot='left']:hover,
 .projects-sheet[data-slot='left']:focus-visible {
-    transform: translate3d(0, -10px, 44px) rotateY(40deg);
+    transform: translate3d(0, -10px, 140px) rotateY(8deg);
     border-color: rgba(255, 255, 255, 0.85);
     box-shadow:
         0 46px 80px rgba(0, 0, 0, 0.5),
@@ -2500,7 +2542,7 @@
 
 .projects-sheet[data-slot^='right']:hover,
 .projects-sheet[data-slot^='right']:focus-visible {
-    transform: translate3d(0, -10px, 44px) rotateY(-40deg);
+    transform: translate3d(0, -10px, 140px) rotateY(-8deg);
     border-color: rgba(255, 255, 255, 0.85);
     box-shadow:
         0 46px 80px rgba(0, 0, 0, 0.5),
@@ -2560,7 +2602,8 @@
 
 .projects-sheet__pane-desc {
     display: block;
-    width: 230px;
+    width: 100%;
+    overflow-wrap: break-word;
     font-size: 14px;
     font-weight: 500;
     line-height: 1.35;
@@ -2570,7 +2613,6 @@
 }
 
 .projects-sheet[data-slot^='right'] .projects-sheet__pane-desc {
-    width: 150px;
     opacity: 0;
     transform: translateY(6px);
 }
@@ -2862,6 +2904,10 @@
     animation: none;
 }
 
+/* Reduced motion drops the animated slide between slots and the pointer
+   tilt, but a hovered pane still needs its lift/turn applied (instantly,
+   with no transition) — without it, the pane snaps back to a position
+   that lets its neighbour's edge cover its own text again. */
 .projects-stage.calm .projects-sheet {
     transition:
         opacity 0.3s ease,
@@ -2869,8 +2915,9 @@
         border-color 0.3s ease;
 }
 
-.projects-stage.calm .projects-sheet:hover,
-.projects-stage.calm .projects-sheet:focus-visible {
+.projects-stage.calm .projects-sheet__pane-desc,
+.projects-stage.calm .projects-chip {
+    transition: opacity 0.3s ease;
     transform: none !important;
 }
 
@@ -2887,8 +2934,9 @@
             border-color 0.3s ease;
     }
 
-    .projects-sheet:hover,
-    .projects-sheet:focus-visible {
+    .projects-sheet__pane-desc,
+    .projects-chip {
+        transition: opacity 0.3s ease;
         transform: none !important;
     }
 }
@@ -3016,13 +3064,42 @@
 
 /* ---------- standard view ---------- */
 
+.projects-standard {
+    max-width: 64rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .projects-standard {
+        padding-inline: 3rem;
+    }
+}
+
 .standard-projects {
-    margin: 0;
-    padding: 0;
+    margin: 2.5rem 0 0;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-line);
     list-style: none;
     display: flex;
     flex-direction: column;
     gap: 2.5rem;
+}
+
+.standard-project__title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.75rem;
+}
+
+.standard-project__sample {
+    color: var(--color-index);
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
 .standard-project {
