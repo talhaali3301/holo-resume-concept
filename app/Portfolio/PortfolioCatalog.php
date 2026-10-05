@@ -316,10 +316,17 @@ final class PortfolioCatalog
                 $category = 'other';
             }
 
+            $layer = $this->line($entry['layer'] ?? null, 40) ?? 'application';
+
+            if (! in_array($layer, ['interface', 'application', 'infrastructure'], true)) {
+                $layer = 'application';
+            }
+
             $skills[] = [
                 'slug' => $slug,
                 'title' => $title,
                 'category' => $category,
+                'layer' => $layer,
                 'description' => $this->block($entry['description'] ?? null, 600) ?? '',
                 'sample' => $this->flag($entry, true),
             ];

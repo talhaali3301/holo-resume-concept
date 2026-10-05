@@ -65,10 +65,13 @@ export interface RelatedProject {
     href: string
 }
 
+export type SkillLayer = 'interface' | 'application' | 'infrastructure'
+
 export interface Skill {
     slug: string
     title: string
     category: string
+    layer: SkillLayer
     description: string
     sample: boolean
     href: string

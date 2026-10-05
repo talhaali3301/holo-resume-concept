@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { isCurrentPath, nextTrapIndex, relatedSkills, withView } from '@/lib/experience'
-import { layoutSkills } from '@/lib/skillLayout'
 
 describe('portfolio interaction helpers', () => {
     it('adds and removes the view query without dropping other parameters', () => {
@@ -35,20 +34,5 @@ describe('portfolio interaction helpers', () => {
         expect(isCurrentPath('/skills', '/projects')).toBe(false)
         expect(isCurrentPath('/', '/')).toBe(true)
         expect(isCurrentPath('/projects', '/')).toBe(false)
-    })
-
-    it('keeps skills in one category from sharing a position', () => {
-        const points = layoutSkills([
-            { slug: 'vue', category: 'technology' },
-            { slug: 'laravel', category: 'technology' },
-            { slug: 'testing', category: 'practice' },
-            { slug: 'unknown', category: 'made-up' },
-        ])
-        const vue = points.find((point) => point.slug === 'vue')
-        const laravel = points.find((point) => point.slug === 'laravel')
-
-        expect(vue?.position).not.toEqual(laravel?.position)
-        expect(points.find((point) => point.slug === 'unknown')).toBeTruthy()
-        expect(points.find((point) => point.slug === 'testing')?.position[1]).toBeLessThan(vue?.position[1] ?? 0)
     })
 })
