@@ -14,6 +14,8 @@ const props = defineProps<{
 const emit = defineEmits<{
     'toggle-motion': []
     navigate: [id: ScreenId]
+    'open-standard': []
+    'open-projects': []
 }>()
 
 const railOrder: ScreenId[] = ['contact', 'skills', 'projects', 'lobby']
@@ -36,6 +38,20 @@ function onRailClick(id: ScreenId, event: MouseEvent) {
     event.preventDefault()
     emit('navigate', id)
 }
+
+function onProjectsClick(event: MouseEvent) {
+    if (props.current === 'projects') {
+        return
+    }
+
+    event.preventDefault()
+    emit('open-projects')
+}
+
+function onStandardClick(event: MouseEvent) {
+    event.preventDefault()
+    emit('open-standard')
+}
 </script>
 
 <template>
@@ -49,8 +65,12 @@ function onRailClick(id: ScreenId, event: MouseEvent) {
             {{ brand }}
         </Link>
         <nav aria-label="Other views">
-            <a :href="standardHref">Portfolio index</a>
-            <a :href="standardHref">Standard view</a>
+            <a
+                :href="routes.projects"
+                :aria-current="current === 'projects' ? 'page' : undefined"
+                @click="onProjectsClick"
+            >Projects</a>
+            <a :href="standardHref" @click="onStandardClick">Standard view</a>
             <button class="lobby-motion" type="button" :aria-pressed="!reduced" @click="emit('toggle-motion')">
                 <i></i><span>{{ reduced ? 'Motion off' : 'Motion on' }}</span>
             </button>

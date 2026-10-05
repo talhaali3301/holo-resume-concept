@@ -18,9 +18,9 @@ class PortfolioController extends Controller
         private readonly PortfolioPresenter $pages,
     ) {}
 
-    public function lobby(): InertiaResponse
+    public function lobby(Request $request): InertiaResponse
     {
-        return Inertia::render('Lobby', $this->pages->lobby());
+        return Inertia::render('Lobby', $this->pages->lobby($request));
     }
 
     public function projects(Request $request, ?string $project = null): InertiaResponse

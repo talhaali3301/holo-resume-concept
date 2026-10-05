@@ -19,6 +19,7 @@ class PortfolioPagesTest extends TestCase
                 ->has('identity.headline')
                 ->has('destinations', 3)
                 ->has('entry.hall')
+                ->where('view', 'gallery')
                 ->where('meta.title', 'Lobby'))
             ->assertSee('<meta name="description"', false)
             ->assertSee('Operations Console', false);
@@ -39,6 +40,21 @@ class PortfolioPagesTest extends TestCase
                 ->has('milestones')
                 ->has('links')
                 ->where('view', 'gallery'));
+    }
+
+    public function test_lobby_has_its_own_standard_view(): void
+    {
+        $this->get('/')
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('entry.standard', url('/?view=standard')));
+
+        $this->get('/?view=standard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Lobby')
+                ->has('identity.headline')
+                ->where('view', 'standard')
+                ->where('meta.title', 'Lobby'));
     }
 
     public function test_project_and_skill_links_are_addressable(): void

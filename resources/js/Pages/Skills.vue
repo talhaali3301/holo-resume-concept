@@ -99,15 +99,7 @@ const standardLede = computed(() => `${props.skills.length} skills across three 
 
 const leaving = ref(false)
 
-function onNavigate(id: ScreenId) {
-    if (id === 'contact') {
-        openContact()
-
-        return
-    }
-
-    const href = id === 'lobby' ? props.routes.lobby : id === 'projects' ? props.routes.projects : props.routes.index
-
+function goTo(href: string) {
     if (reduced.value) {
         router.visit(href)
 
@@ -116,6 +108,24 @@ function onNavigate(id: ScreenId) {
 
     leaving.value = true
     window.setTimeout(() => router.visit(href), 520)
+}
+
+function onNavigate(id: ScreenId) {
+    if (id === 'contact') {
+        openContact()
+
+        return
+    }
+
+    goTo(id === 'lobby' ? props.routes.lobby : id === 'projects' ? props.routes.projects : props.routes.index)
+}
+
+function onOpenStandard() {
+    goTo(standardHref.value)
+}
+
+function onOpenProjects() {
+    goTo(props.routes.projects)
 }
 
 const stackRef = ref<HTMLElement | null>(null)
@@ -258,7 +268,7 @@ onUnmounted(() => {
                         </div>
                     </section>
 
-                    <DepthChrome :current="'skills'" :reduced="reduced" :routes="railRoutes" :standard-href="standardHref" :brand="brand" @toggle-motion="toggleMotion" @navigate="onNavigate" />
+                    <DepthChrome :current="'skills'" :reduced="reduced" :routes="railRoutes" :standard-href="standardHref" :brand="brand" @toggle-motion="toggleMotion" @navigate="onNavigate" @open-standard="onOpenStandard" @open-projects="onOpenProjects" />
 
                     <div class="skills-voice">
                         <span class="skills-voice__line">The whole stack, front to back.</span>

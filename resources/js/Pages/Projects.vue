@@ -128,15 +128,7 @@ function onKeydown(event: KeyboardEvent) {
 
 const leaving = ref(false)
 
-function onNavigate(id: ScreenId) {
-    if (id === 'contact') {
-        openContact()
-
-        return
-    }
-
-    const href = id === 'lobby' ? props.routes.lobby : id === 'skills' ? props.routes.skills : props.routes.index
-
+function goTo(href: string) {
     if (reduced.value) {
         router.visit(href)
 
@@ -145,6 +137,20 @@ function onNavigate(id: ScreenId) {
 
     leaving.value = true
     window.setTimeout(() => router.visit(href), 520)
+}
+
+function onNavigate(id: ScreenId) {
+    if (id === 'contact') {
+        openContact()
+
+        return
+    }
+
+    goTo(id === 'lobby' ? props.routes.lobby : id === 'skills' ? props.routes.skills : props.routes.index)
+}
+
+function onOpenStandard() {
+    goTo(standardHref.value)
 }
 
 const stackRef = ref<HTMLElement | null>(null)
@@ -306,7 +312,7 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <DepthChrome :current="'projects'" :reduced="reduced" :routes="railRoutes" :standard-href="standardHref" :brand="brand" @toggle-motion="toggleMotion" @navigate="onNavigate" />
+                    <DepthChrome :current="'projects'" :reduced="reduced" :routes="railRoutes" :standard-href="standardHref" :brand="brand" @toggle-motion="toggleMotion" @navigate="onNavigate" @open-standard="onOpenStandard" />
 
                     <div class="projects-voice">
                         <span class="projects-voice__line">{{ tagline }}</span>

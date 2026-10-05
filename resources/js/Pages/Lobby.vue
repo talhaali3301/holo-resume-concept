@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { Head, router } from '@inertiajs/vue3'
+import { Head, router, usePage } from '@inertiajs/vue3'
 import { computed, nextTick, onMounted, onUnmounted, ref, watch, type ComponentPublicInstance } from 'vue'
 import DepthChrome, { type ScreenId } from '@/Components/shell/DepthChrome.vue'
 import { useOpenContact } from '@/composables/useContact'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { useMotionToggle } from '@/composables/useMotionToggle'
 import { useStageScale } from '@/composables/useStageScale'
+import { withView } from '@/lib/experience'
 import PortfolioLayout from '@/Layouts/PortfolioLayout.vue'
-import type { Destination, Identity, PageMeta } from '@/types/portfolio'
+import type { Destination, Identity, PageMeta, Shell, ViewMode } from '@/types/portfolio'
 
 defineOptions({ layout: PortfolioLayout, inheritAttrs: false })
 
@@ -15,13 +16,37 @@ const props = defineProps<{
     identity: Identity
     destinations: Destination[]
     entry: { hall: string; standard: string; skills: string }
+    view: ViewMode
     meta: PageMeta
 }>()
+
+const page = usePage<{ shell: Shell }>()
+const contact = computed(() => page.props.shell.contact)
 
 const openContact = useOpenContact()
 const isMobile = useMediaQuery('(max-width: 899px)')
 const { root: stageRoot, scale } = useStageScale(1440, 900)
 const { reduced, toggle: toggleMotion } = useMotionToggle()
+
+const projectsStandardHref = computed(() => withView(props.entry.hall, 'standard'))
+const skillsStandardHref = computed(() => withView(props.entry.skills, 'standard'))
+
+function setView(next: ViewMode) {
+    router.visit(withView('/', next), { preserveScroll: true })
+}
+
+const leaving = ref(false)
+
+function onOpenStandard() {
+    if (reduced.value) {
+        router.visit(props.entry.standard)
+
+        return
+    }
+
+    leaving.value = true
+    window.setTimeout(() => router.visit(props.entry.standard), 950)
+}
 
 const railRoutes: Record<ScreenId, string> = { lobby: '/', projects: props.entry.hall, skills: props.entry.skills, contact: '#' }
 
@@ -106,6 +131,10 @@ function enterHall() {
 
 function enterSkills() {
     router.visit(props.entry.skills)
+}
+
+function openProjects() {
+    router.visit(props.entry.hall)
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -196,12 +225,13 @@ onUnmounted(() => {
         <meta head-key="description" name="description" :content="meta.description" />
     </Head>
 
-    <main id="content" class="lobby-viewport">
+    <main id="content" :class="view === 'gallery' ? 'lobby-viewport' : 'standard-page lobby-standard'">
+        <template v-if="view === 'gallery'">
         <div v-if="!isMobile" class="lobby-stage-wrap">
             <div
                 ref="stageRoot"
                 class="stage-1440 lobby-stage"
-                :class="{ intro: introActive, settling: settlingActive, calm: reduced }"
+                :class="{ intro: introActive, settling: settlingActive, calm: reduced, leaving }"
                 :style="{ transform: `translate(-50%, -50%) scale(${scale})`, '--lobby-glow': glow[active] }"
             >
                 <div class="lobby-bloom" aria-hidden="true"></div>
@@ -251,10 +281,10 @@ onUnmounted(() => {
                                     <button class="lobby-cta" type="button" @click="enterHall">
                                         <span class="lobby-cta__label">Enter the experience</span>
                                         <span class="lobby-cta__tile">
-                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#0A0C10" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
+                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
                                         </span>
                                     </button>
-                                    <a class="lobby-quiet" :href="entry.standard">Read standard profile</a>
+                                    <a class="lobby-quiet" :href="entry.standard" @click.prevent="onOpenStandard">Read standard profile</a>
                                 </div>
                             </div>
 
@@ -281,7 +311,7 @@ onUnmounted(() => {
                                     >
                                         <span class="lobby-cta__label">Enter the experience</span>
                                         <span class="lobby-cta__tile">
-                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#0A0C10" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
+                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
                                         </span>
                                     </button>
                                     <button
@@ -292,13 +322,13 @@ onUnmounted(() => {
                                     >
                                         <span class="lobby-cta__label">Enter the experience</span>
                                         <span class="lobby-cta__tile">
-                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#0A0C10" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
+                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
                                         </span>
                                     </button>
                                     <button v-else class="lobby-cta" type="button" @click="openContact">
                                         <span class="lobby-cta__label">Start a conversation</span>
                                         <span class="lobby-cta__tile">
-                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#0A0C10" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
+                                            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
                                         </span>
                                     </button>
                                     <button class="lobby-back" type="button" @click="go('lobby')">
@@ -319,6 +349,8 @@ onUnmounted(() => {
                     :brand="identity.product"
                     @toggle-motion="toggleMotion"
                     @navigate="go"
+                    @open-standard="onOpenStandard"
+                    @open-projects="openProjects"
                 />
 
                 <div class="lobby-voice">
@@ -364,14 +396,56 @@ onUnmounted(() => {
             </div>
 
             <div class="lobby-mobile__actions">
-                <a class="lobby-quiet" :href="entry.standard">Read standard profile</a>
+                <a class="lobby-quiet" :href="entry.standard" @click.prevent="onOpenStandard">Read standard profile</a>
                 <button class="lobby-cta lobby-cta--full" type="button" @click="router.visit(entry.hall)">
                     <span class="lobby-cta__label">Enter the experience</span>
                     <span class="lobby-cta__tile">
-                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#0A0C10" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
+                        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M3 11h15M12 5l6 6-6 6" /></svg>
                     </span>
                 </button>
             </div>
         </div>
+        </template>
+
+        <template v-else>
+            <p class="eyebrow">Standard view</p>
+            <div class="standard-head mt-3 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h1 class="page-title">{{ identity.name ?? 'Your Name' }}</h1>
+                    <p class="lede">{{ identity.role }}</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button type="button" class="btn btn-primary" @click="setView('gallery')">Show the lobby</button>
+                </div>
+            </div>
+
+            <div class="mt-10 flex flex-col gap-8 border-t pt-8" style="border-color: var(--color-line)">
+                <div>
+                    <p class="standard-project__text" style="max-width: 40rem">{{ identity.lede }}</p>
+                    <div class="mt-4">
+                        <span class="case-file__label">Location</span>
+                        <p class="mt-1 standard-project__text">{{ identity.availability }}</p>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="case-file__label">Explore</span>
+                    <div class="mt-3 flex flex-wrap gap-3">
+                        <a :href="projectsStandardHref" class="btn btn-ghost">Projects</a>
+                        <a :href="skillsStandardHref" class="btn btn-ghost">Skills</a>
+                    </div>
+                </div>
+
+                <div v-if="contact.email || contact.links.length">
+                    <span class="case-file__label">Contact</span>
+                    <div class="mt-3 flex flex-wrap gap-3">
+                        <a v-if="contact.email" class="btn btn-primary" :href="`mailto:${contact.email}`">Email</a>
+                        <a v-for="link in contact.links" :key="link.url" class="btn-quiet" :href="link.url" target="_blank" rel="noopener noreferrer">{{ link.label }}</a>
+                    </div>
+                </div>
+            </div>
+
+            <p class="credit-line mt-10">Concept &middot; Sample projects &middot; Designed &amp; built by Talha Ali, <a class="credit-link" href="https://robocoders.dev/" target="_blank" rel="noopener noreferrer">Robo Coders</a></p>
+        </template>
     </main>
 </template>

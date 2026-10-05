@@ -504,7 +504,25 @@
 .lobby-stage {
     overflow: hidden;
     background: var(--lobby-ink);
-    transition: --lobby-glow 0.9s ease;
+    transition:
+        --lobby-glow 0.9s ease,
+        opacity 0.48s ease;
+}
+
+.lobby-stage.leaving {
+    opacity: 0;
+}
+
+.lobby-standard {
+    max-width: 64rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .lobby-standard {
+        padding-inline: 3rem;
+    }
 }
 
 /* ---------- light ---------- */
@@ -923,6 +941,14 @@
     background: var(--lobby-amber);
 }
 
+/* On the amber Projects sheet, the amber tile reads as part of the
+   background and its arrow nearly disappears. Give it the same dark tone
+   already used for the "Back to Lobby" button on these sheets. */
+.s-projects .lobby-cta__tile {
+    background: #14100b;
+    color: var(--lobby-pearl);
+}
+
 .lobby-cta__tile svg {
     transition: transform 0.35s var(--lobby-ease);
 }
@@ -1020,6 +1046,12 @@
 
 .lobby-top nav a:hover {
     background: rgba(244, 238, 228, 0.1);
+}
+
+.lobby-top nav a[aria-current='page'] {
+    background: rgba(244, 238, 228, 0.14);
+    font-weight: 600;
+    cursor: default;
 }
 
 .lobby-motion {

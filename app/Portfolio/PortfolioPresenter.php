@@ -34,16 +34,17 @@ final class PortfolioPresenter
     /**
      * @return array<string, mixed>
      */
-    public function lobby(): array
+    public function lobby(Request $request): array
     {
         return [
             'identity' => $this->catalog->identity(),
             'destinations' => $this->destinations(),
             'entry' => [
                 'hall' => route('projects.index'),
-                'standard' => route('projects.index', ['view' => 'standard']),
+                'standard' => route('lobby', ['view' => 'standard']),
                 'skills' => route('skills.index'),
             ],
+            'view' => $this->view($request),
             'meta' => $this->meta('lobby'),
         ];
     }
