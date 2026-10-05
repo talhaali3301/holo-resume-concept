@@ -64,11 +64,7 @@ const pickedSlug = computed(() => props.selected?.slug ?? null)
 const PROJECT_PREVIEW_LIMIT = 3
 
 function usedInText(skill: Skill): string {
-    if (skill.projects.length === 0) {
-        return `${skill.title} isn't linked to a project yet.`
-    }
-
-    return `${skill.title} is used in`
+    return `${skill.title} is used in `
 }
 
 function visibleProjects(skill: Skill) {
@@ -238,7 +234,7 @@ onUnmounted(() => {
                                         </button>
                                         <p v-if="skillsByLayer.get(layer.key)?.length === 0" class="skills-layer__empty">No skills in this layer yet.</p>
                                     </div>
-                                    <div v-if="selected && selected.layer === layer.key" class="skills-layer__detail">
+                                    <div v-if="selected && selected.layer === layer.key && selected.projects.length > 0" class="skills-layer__detail">
                                         <span>{{ usedInText(selected) }}</span>
                                         <template v-for="(project, i) in visibleProjects(selected)" :key="project.slug">
                                             <a :href="project.href">{{ project.title }}</a><span v-if="i < visibleProjects(selected).length - 1">, </span>
@@ -290,7 +286,7 @@ onUnmounted(() => {
                                 {{ skill.title }}
                             </button>
                         </div>
-                        <div v-if="selected && selected.layer === layer.key" class="skills-layer__detail">
+                        <div v-if="selected && selected.layer === layer.key && selected.projects.length > 0" class="skills-layer__detail">
                             <span>{{ usedInText(selected) }}</span>
                             <template v-for="(project, i) in visibleProjects(selected)" :key="project.slug">
                                 <a :href="project.href">{{ project.title }}</a><span v-if="i < visibleProjects(selected).length - 1">, </span>
@@ -337,7 +333,7 @@ onUnmounted(() => {
                                 <span v-if="skill.sample" class="standard-project__sample">Sample</span>
                             </div>
                             <p v-if="skill.description" class="standard-project__text">{{ skill.description }}</p>
-                            <p class="skills-standard-item__used">
+                            <p v-if="skill.projects.length > 0" class="skills-standard-item__used">
                                 <span>{{ usedInText(skill) }}</span>
                                 <template v-for="(project, i) in skill.projects" :key="project.slug">
                                     <a :href="project.href">{{ project.title }}</a><span v-if="i < skill.projects.length - 1">, </span>
