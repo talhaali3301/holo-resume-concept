@@ -450,6 +450,32 @@
     text-underline-offset: 0.2em;
 }
 
+/* Bottom-left credit line shared by the Lobby, Projects, and Skills
+   screens (gallery, mobile, and standard views alike). */
+.credit-line {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--lobby-quiet);
+}
+
+.credit-line--center {
+    text-align: center;
+}
+
+.credit-link {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.credit-link:hover,
+.credit-link:focus-visible {
+    color: var(--lobby-pearl);
+}
+
 /* ======================================================================
    Lobby — Direction 04, "Layers of Light"
    Ported from docs/mockups/holo-lobby-direction-04.html. Scoped to the
@@ -2353,7 +2379,7 @@
 }
 
 .skills-layer[data-layer='interface'] {
-    transform: translate3d(0, 142px, 0);
+    transform: translate3d(0, 200px, 0);
     background: linear-gradient(180deg, rgba(255, 124, 72, 0.4) 0%, rgba(255, 124, 72, 0.14) 100%);
     border-color: rgba(255, 255, 255, 0.5);
     box-shadow:
@@ -2362,7 +2388,7 @@
 }
 
 .skills-layer__head {
-    height: 46px;
+    height: 40px;
     box-sizing: border-box;
     padding: 0 26px;
     display: flex;
@@ -2408,18 +2434,18 @@
 }
 
 .skills-layer__body {
-    padding: 20px 26px;
+    padding: 14px 26px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .skills-layer__chips {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
-    font-size: 16px;
+    gap: 8px;
+    font-size: 15px;
     font-weight: 600;
 }
 
@@ -2453,17 +2479,17 @@
 /* ---------- skill chips ---------- */
 
 .skills-chip {
-    height: 50px;
-    padding: 0 18px;
+    height: 38px;
+    padding: 0 14px;
     display: flex;
     align-items: center;
     gap: 10px;
-    border-radius: 12px;
+    border-radius: 10px;
     background: linear-gradient(155deg, #2b2d34 0%, #17181d 100%);
     border: 1px solid rgba(255, 255, 255, 0.18);
     color: var(--lobby-pearl);
     font: inherit;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
     transition:
@@ -2527,7 +2553,7 @@
 .skills-timeline {
     position: absolute;
     left: 48px;
-    top: 716px;
+    top: 731px;
     width: 1150px;
     height: 66px;
     box-sizing: border-box;

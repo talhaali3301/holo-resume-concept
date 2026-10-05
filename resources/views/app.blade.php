@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="color-scheme" content="dark">
         <meta name="description" content="{{ $portfolioMeta['description'] }}">
+        <meta name="author" content="Talha Ali">
         <meta name="robots" content="index, follow">
         <link rel="canonical" href="{{ $portfolioMeta['url'] }}">
         <meta property="og:type" content="website">

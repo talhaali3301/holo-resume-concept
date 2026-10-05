@@ -262,7 +262,7 @@ onUnmounted(() => {
 
                     <div class="skills-voice">
                         <span class="skills-voice__line">The whole stack, front to back.</span>
-                        <span class="skills-voice__tag">Concept &middot; Sample content</span>
+                        <span class="skills-voice__tag">Concept &middot; Sample projects &middot; Designed &amp; built by Talha Ali, <a class="credit-link" href="https://robocoders.dev/" target="_blank" rel="noopener noreferrer">Robo Coders</a></span>
                     </div>
                     <div class="skills-hint">Pick a skill to see where it is used</div>
                 </div>
@@ -329,6 +329,7 @@ onUnmounted(() => {
                     <a class="projects-mobile__link" :href="routes.projects" @click.prevent="onNavigate('projects')">Projects</a>
                     <button type="button" class="projects-mobile__link" @click="openContact">Contact</button>
                 </div>
+                <p class="credit-line credit-line--center">Concept &middot; Sample projects &middot; Designed &amp; built by Talha Ali, <a class="credit-link" href="https://robocoders.dev/" target="_blank" rel="noopener noreferrer">Robo Coders</a></p>
             </div>
         </template>
 
@@ -381,6 +382,7 @@ onUnmounted(() => {
                     </li>
                 </ul>
             </section>
+            <p class="credit-line mt-10">Concept &middot; Sample projects &middot; Designed &amp; built by Talha Ali, <a class="credit-link" href="https://robocoders.dev/" target="_blank" rel="noopener noreferrer">Robo Coders</a></p>
         </template>
     </main>
 </template>

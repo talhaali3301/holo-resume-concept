@@ -1,8 +1,10 @@
 # Holo Resume
 
+Concept · Sample projects · Designed & built by Talha Ali, [Robo Coders](https://robocoders.dev/)
+
 A three-room portfolio for a web application developer. Visitors can walk a lobby, a projects hall, and a skills observatory, or read the same record as a standard page. The rooms are browser-rendered 3D. The writing, navigation, and project details do not depend on WebGL.
 
-The biography, projects, skills, and dates shipped with this repository are **sample content**. They are not a record of a real client, employer, or measured outcome. Replace them in `content/portfolio.php` before you present the site as your own work.
+The projects and milestone dates shipped with this repository are **sample content**. They are not a record of a real client, employer, or measured outcome. Replace them in `content/portfolio.php` before you present them as your own work.
 
 ## Screens
 

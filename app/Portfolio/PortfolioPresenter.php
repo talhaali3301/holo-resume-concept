@@ -225,14 +225,14 @@ final class PortfolioPresenter
                 'id' => 'skills',
                 'kicker' => 'Observatory',
                 'label' => 'Skills',
-                'summary' => 'See technologies, practices, and the career timeline.',
+                'summary' => 'See the technologies I use and what I build with them.',
                 'href' => route('skills.index'),
             ],
             [
                 'id' => 'contact',
                 'kicker' => 'Connect',
                 'label' => 'Contact',
-                'summary' => 'Start a conversation when contact details are configured.',
+                'summary' => 'Start a conversation about your next web application.',
                 'href' => null,
             ],
         ];

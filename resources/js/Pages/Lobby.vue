@@ -323,7 +323,7 @@ onUnmounted(() => {
 
                 <div class="lobby-voice">
                     <span class="lobby-voice__line">A portfolio built to be explored.</span>
-                    <span v-if="identity.sample" class="lobby-voice__tag">Concept &middot; Sample content</span>
+                    <span class="lobby-voice__tag">Concept &middot; Sample projects &middot; Designed &amp; built by Talha Ali, <a class="credit-link" href="https://robocoders.dev/" target="_blank" rel="noopener noreferrer">Robo Coders</a></span>
                 </div>
                 <div class="lobby-hint">Click any layer to bring it forward</div>
             </div>
@@ -359,7 +359,7 @@ onUnmounted(() => {
                 </div>
                 <div class="lobby-voice lobby-voice--mobile">
                     <span class="lobby-voice__line">A portfolio built to be explored.</span>
-                    <span v-if="identity.sample" class="lobby-voice__tag">Concept &middot; Sample content</span>
+                    <span class="lobby-voice__tag">Concept &middot; Sample projects &middot; Designed &amp; built by Talha Ali, <a class="credit-link" href="https://robocoders.dev/" target="_blank" rel="noopener noreferrer">Robo Coders</a></span>
                 </div>
             </div>
 
