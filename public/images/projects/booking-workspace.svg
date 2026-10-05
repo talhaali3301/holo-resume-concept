@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label="Abstract sample visual">
-  <rect width="800" height="500" fill="#070b14"/>
-  <g><rect x="80" y="60" width="640" height="80" fill="none" stroke="#8eecff" stroke-width="1.5" opacity="0.9"/><rect x="80" y="170" width="200" height="250" fill="none" stroke="#8eecff" stroke-width="1.5" opacity="0.45"/><rect x="310" y="170" width="410" height="250" fill="none" stroke="#8eecff" stroke-width="1.5" opacity="0.9"/></g>
-  <text x="48" y="464" fill="#8eecff" font-family="Georgia, serif" font-size="16" letter-spacing="4">SAMPLE VISUAL</text>
-</svg>

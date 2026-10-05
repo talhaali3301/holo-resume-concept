@@ -223,7 +223,7 @@ final class PortfolioPresenter
             ],
             [
                 'id' => 'skills',
-                'kicker' => 'Observatory',
+                'kicker' => 'Stack',
                 'label' => 'Skills',
                 'summary' => 'See the technologies I use and what I build with them.',
                 'href' => route('skills.index'),
@@ -264,15 +264,15 @@ final class PortfolioPresenter
         $pages = [
             'lobby' => [
                 'title' => 'Lobby',
-                'description' => 'A walkable sample portfolio for a web application developer, with a projects hall, a skills observatory, and a standard reading view.',
+                'description' => 'A walkable portfolio for a full-stack Laravel & Vue.js developer, with a projects hall, a skills screen, and a standard reading view.',
             ],
             'projects' => [
                 'title' => 'Projects hall',
                 'description' => 'Sample projects in the Holo Resume gallery. Open a piece for its purpose, role, technologies, and links when they are configured.',
             ],
             'skills' => [
-                'title' => 'Skills observatory',
-                'description' => 'Sample skills, the projects they connect to, and a career timeline whose dates are unverified until you replace them.',
+                'title' => 'Skills',
+                'description' => 'The technologies I use, what I build with them, and the projects they connect to.',
             ],
         ];
 

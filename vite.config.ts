@@ -4,7 +4,6 @@ import laravel from 'laravel-vite-plugin'
 import { bunny, fontsource } from 'laravel-vite-plugin/fonts'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
-import { templateCompilerOptions } from '@tresjs/core'
 
 export default defineConfig({
     plugins: [
@@ -19,7 +18,6 @@ export default defineConfig({
         }),
         vue({
             template: {
-                compilerOptions: templateCompilerOptions.template.compilerOptions,
                 transformAssetUrls: {
                     base: null,
                     includeAbsolute: false,
