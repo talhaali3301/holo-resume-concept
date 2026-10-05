@@ -80,7 +80,6 @@ final class PortfolioPresenter
         return [
             'skills' => $skills,
             'links' => $this->catalog->skillLinks(),
-            'milestones' => $this->catalog->milestones(),
             'selected' => $this->find($skills, $slug),
             'view' => $this->view($request),
             'routes' => [
@@ -110,7 +109,6 @@ final class PortfolioPresenter
                 'identity' => $this->catalog->identity(),
                 'projects' => $this->projects(),
                 'skills' => $this->skills(),
-                'milestones' => $this->catalog->milestones(),
                 'contact' => $this->catalog->contact(),
                 'lobby' => route('lobby'),
                 'projectsIndex' => route('projects.index'),

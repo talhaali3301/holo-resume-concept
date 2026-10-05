@@ -61,21 +61,6 @@
         </section>
 
         <section>
-            <h2>Career timeline</h2>
-            @forelse ($portfolioStatic['milestones'] as $milestone)
-                <article>
-                    <h3>{{ $milestone['title'] }}</h3>
-                    <p>{{ $milestone['period'] }}</p>
-                    @if ($milestone['summary'] !== '')
-                        <p>{{ $milestone['summary'] }}</p>
-                    @endif
-                </article>
-            @empty
-                <p>No milestones have been added yet.</p>
-            @endforelse
-        </section>
-
-        <section>
             <h2>{{ $portfolioStatic['contact']['headline'] }}</h2>
             @if ($portfolioStatic['contact']['body'] !== '')
                 <p>{{ $portfolioStatic['contact']['body'] }}</p>

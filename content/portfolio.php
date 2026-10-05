@@ -9,9 +9,8 @@ declare(strict_types=1);
  * Every entry shipped with the project is sample content. It is not a claim
  * about a real client, employer, date, metric, or testimonial.
  *
- * Set "sample" => false on the identity, and on each project, skill, and
- * milestone, only when that entry is your own verified information.
- * While identity.sample is true, keep milestone periods as "Unverified".
+ * Set "sample" => false on the identity, and on each project and skill,
+ * only when that entry is your own verified information.
  *
  * Links:
  * - Use https URLs only. Invalid, empty, and non-https links are omitted.
@@ -283,37 +282,6 @@ return [
             'layer' => 'application',
             'description' => 'Connecting external services and platforms into an application.',
             'sample' => false,
-        ],
-    ],
-
-    'milestones' => [
-        [
-            'slug' => 'foundations',
-            'title' => 'Foundations',
-            'period' => 'Unverified',
-            'summary' => 'Sample milestone. A placeholder for early practice. Replace it with a phase you want to show, and only add a date you can stand behind.',
-            'sample' => true,
-        ],
-        [
-            'slug' => 'product-work',
-            'title' => 'Product work',
-            'period' => 'Unverified',
-            'summary' => 'Sample milestone. A placeholder for application work. Do not invent an employer or a job title here.',
-            'sample' => true,
-        ],
-        [
-            'slug' => 'independent-work',
-            'title' => 'Independent work',
-            'period' => 'Unverified',
-            'summary' => 'Sample milestone. A placeholder for freelance work, collaborations, or self-directed products.',
-            'sample' => true,
-        ],
-        [
-            'slug' => 'current-focus',
-            'title' => 'Current focus',
-            'period' => 'Unverified',
-            'summary' => 'Sample milestone. A placeholder for what you want a visitor to understand about the present.',
-            'sample' => true,
         ],
     ],
 ];

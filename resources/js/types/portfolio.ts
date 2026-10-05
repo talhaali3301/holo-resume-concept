@@ -84,14 +84,6 @@ export interface SkillLink {
     weight: number
 }
 
-export interface Milestone {
-    slug: string
-    title: string
-    period: string
-    summary: string
-    sample: boolean
-}
-
 export interface Destination {
     id: string
     kicker: string

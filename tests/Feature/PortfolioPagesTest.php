@@ -37,7 +37,6 @@ class PortfolioPagesTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Skills')
                 ->has('skills')
-                ->has('milestones')
                 ->has('links')
                 ->where('view', 'gallery'));
     }

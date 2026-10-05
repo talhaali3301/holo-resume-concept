@@ -8,14 +8,13 @@ import { useMotionToggle } from '@/composables/useMotionToggle'
 import { useStageScale } from '@/composables/useStageScale'
 import { withView } from '@/lib/experience'
 import PortfolioLayout from '@/Layouts/PortfolioLayout.vue'
-import type { Milestone, PageMeta, Shell, Skill, SkillLayer, SkillLink, ViewMode } from '@/types/portfolio'
+import type { PageMeta, Shell, Skill, SkillLayer, SkillLink, ViewMode } from '@/types/portfolio'
 
 defineOptions({ layout: PortfolioLayout, inheritAttrs: false })
 
 const props = defineProps<{
     skills: Skill[]
     links: SkillLink[]
-    milestones: Milestone[]
     selected: Skill | null
     view: ViewMode
     routes: { index: string; lobby: string; projects: string }
@@ -252,22 +251,6 @@ onUnmounted(() => {
                         </div>
                     </div>
 
-                    <section v-if="milestones.length > 0" class="skills-timeline" aria-label="Timeline">
-                        <div class="skills-timeline__label">
-                            <span class="skills-timeline__label-tag">TIMELINE</span>
-                            <span class="skills-timeline__label-sub">Yours to fill in</span>
-                        </div>
-                        <div class="skills-timeline__grid" :style="{ gridTemplateColumns: `repeat(${milestones.length}, minmax(0, 1fr))` }">
-                            <div v-for="(milestone, i) in milestones" :key="milestone.slug" class="skills-timeline__item">
-                                <span class="skills-timeline__dot" :class="{ 'is-current': i === milestones.length - 1 }"></span>
-                                <span class="skills-timeline__text">
-                                    <span class="skills-timeline__title">{{ milestone.title }}</span>
-                                    <span class="skills-timeline__period">{{ milestone.period }}</span>
-                                </span>
-                            </div>
-                        </div>
-                    </section>
-
                     <DepthChrome :current="'skills'" :reduced="reduced" :routes="railRoutes" :standard-href="standardHref" :brand="brand" @toggle-motion="toggleMotion" @navigate="onNavigate" @open-standard="onOpenStandard" @open-projects="onOpenProjects" />
 
                     <div class="skills-voice">
@@ -318,22 +301,6 @@ onUnmounted(() => {
                     </div>
                 </div>
 
-                <section v-if="milestones.length > 0" class="skills-mobile__timeline" aria-label="Timeline">
-                    <div class="skills-timeline__label">
-                        <span class="skills-timeline__label-tag">TIMELINE</span>
-                        <span class="skills-timeline__label-sub">Yours to fill in</span>
-                    </div>
-                    <div class="skills-mobile__timeline-list">
-                        <div v-for="(milestone, i) in milestones" :key="milestone.slug" class="skills-timeline__item">
-                            <span class="skills-timeline__dot" :class="{ 'is-current': i === milestones.length - 1 }"></span>
-                            <span class="skills-timeline__text">
-                                <span class="skills-timeline__title">{{ milestone.title }}</span>
-                                <span class="skills-timeline__period">{{ milestone.period }}</span>
-                            </span>
-                        </div>
-                    </div>
-                </section>
-
                 <div class="projects-mobile__bar">
                     <a class="projects-mobile__link" :href="routes.lobby" @click.prevent="onNavigate('lobby')">Lobby</a>
                     <a class="projects-mobile__link" :href="routes.projects" @click.prevent="onNavigate('projects')">Projects</a>
@@ -382,16 +349,6 @@ onUnmounted(() => {
                 </section>
             </div>
 
-            <section v-if="milestones.length > 0" class="skills-standard-timeline">
-                <span class="case-file__label">Timeline &middot; yours to fill in</span>
-                <ul class="skills-standard-timeline__list">
-                    <li v-for="milestone in milestones" :key="milestone.slug">
-                        <span class="standard-project__title">{{ milestone.title }}</span>
-                        <span class="standard-project__label">{{ milestone.period }}</span>
-                        <p class="standard-project__text">{{ milestone.summary }}</p>
-                    </li>
-                </ul>
-            </section>
             <p class="credit-line mt-10">Concept &middot; Sample projects &middot; Designed &amp; built by Talha Ali, <a class="credit-link" href="https://robocoders.dev/" target="_blank" rel="noopener noreferrer">Robo Coders</a></p>
         </template>
     </main>

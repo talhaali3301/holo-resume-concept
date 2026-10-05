@@ -16,7 +16,6 @@ class PortfolioCatalogTest extends TestCase
 
         $this->assertNotEmpty($catalog->projects());
         $this->assertNotEmpty($catalog->skills());
-        $this->assertNotEmpty($catalog->milestones());
 
         foreach ($catalog->projects() as $project) {
             foreach ($project['skills'] as $skill) {
@@ -32,15 +31,6 @@ class PortfolioCatalogTest extends TestCase
         if ($catalog->identity()['sample'] === true) {
             foreach ($catalog->projects() as $project) {
                 $this->assertTrue($project['sample'], 'Sample profiles must label every project as sample.');
-            }
-
-            foreach ($catalog->milestones() as $milestone) {
-                $this->assertTrue($milestone['sample']);
-                $this->assertSame(
-                    'Unverified',
-                    $milestone['period'],
-                    'Sample profile milestones must keep an unverified period. Set identity.sample to false when dates are real.',
-                );
             }
         }
     }
@@ -83,9 +73,6 @@ class PortfolioCatalogTest extends TestCase
                     ['label' => '', 'url' => 'https://example.com/empty'],
                 ],
             ],
-            'milestones' => [
-                ['title' => 'Phase'],
-            ],
         ]);
 
         $this->assertSame(['vue', 'nope'], array_column($catalog->skills(), 'slug'));
@@ -107,7 +94,6 @@ class PortfolioCatalogTest extends TestCase
 
         $this->assertNull($catalog->contact()['email']);
         $this->assertSame([['label' => 'Notes', 'url' => 'https://example.com/notes']], $catalog->contact()['links']);
-        $this->assertSame('Unverified', $catalog->milestones()[0]['period']);
     }
 
     public function test_skill_links_stay_sparse(): void
@@ -144,7 +130,6 @@ class PortfolioCatalogTest extends TestCase
 
         $this->assertSame([], $catalog->projects());
         $this->assertSame([], $catalog->skills());
-        $this->assertSame([], $catalog->milestones());
         $this->assertSame([], $catalog->skillLinks());
         $this->assertNotSame('', $catalog->identity()['headline']);
     }

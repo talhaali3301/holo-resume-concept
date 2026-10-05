@@ -156,14 +156,6 @@ final class PortfolioCatalog
     }
 
     /**
-     * @return list<array{slug: string, title: string, period: string, summary: string, sample: bool}>
-     */
-    public function milestones(): array
-    {
-        return $this->prepared()['milestones'];
-    }
-
-    /**
      * @return array<string, mixed>
      */
     private function prepared(): array
@@ -195,7 +187,6 @@ final class PortfolioCatalog
             'contact' => $this->prepareContact(is_array($source['contact'] ?? null) ? $source['contact'] : []),
             'projects' => $projects,
             'skills' => $this->attachProjects($skills, $projects),
-            'milestones' => $this->prepareMilestones($source['milestones'] ?? []),
         ];
     }
 
@@ -404,48 +395,6 @@ final class PortfolioCatalog
         }
 
         return $projects;
-    }
-
-    /**
-     * @return list<array{slug: string, title: string, period: string, summary: string, sample: bool}>
-     */
-    private function prepareMilestones(mixed $raw): array
-    {
-        if (! is_array($raw)) {
-            return [];
-        }
-
-        $milestones = [];
-        $seen = [];
-
-        foreach ($raw as $entry) {
-            if (! is_array($entry)) {
-                continue;
-            }
-
-            $title = $this->line($entry['title'] ?? null, 120);
-
-            if ($title === null) {
-                continue;
-            }
-
-            $slug = $this->slug($entry['slug'] ?? $title);
-
-            if ($slug === null || isset($seen[$slug])) {
-                continue;
-            }
-
-            $seen[$slug] = true;
-            $milestones[] = [
-                'slug' => $slug,
-                'title' => $title,
-                'period' => $this->line($entry['period'] ?? null, 80) ?? 'Unverified',
-                'summary' => $this->block($entry['summary'] ?? null, 600) ?? '',
-                'sample' => $this->flag($entry, true),
-            ];
-        }
-
-        return $milestones;
     }
 
     /**
